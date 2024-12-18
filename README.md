@@ -1,2 +1,2 @@
 # GopherTix
-A Golang Microservice for Efficiently Managing User Tickets Across Teams
+A GoLang Microservice for Efficiently Managing User Tickets Across Teams
