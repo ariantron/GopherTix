@@ -9,7 +9,7 @@ import (
 
 type Ticket struct {
 	types.BaseModel
-	Title      string           `json:"title"`
+	Title      string           `gorm:"type:varchar(50)" json:"title"`
 	Text       string           `json:"text"`
 	GroupID    uuid.UUID        `gorm:"type:uuid" json:"group_id"`
 	Group      autzmodels.Group `gorm:"foreignKey:GroupID" json:"group"`

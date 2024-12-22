@@ -7,7 +7,7 @@ import (
 
 type Group struct {
 	types.SoftDeleteModel
-	Name          string     `json:"name"`
+	Name          string     `gorm:"type:varchar(50)" json:"name"`
 	ParentGroupID *uuid.UUID `gorm:"type:uuid" json:"parent_group_id"`
 	ParentGroup   *Group     `gorm:"foreignKey:ParentGroupID" json:"parent_group"`
 	SubGroups     []Group    `gorm:"foreignKey:ParentGroupID" json:"sub_groups"`

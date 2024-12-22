@@ -4,5 +4,5 @@ import "gopher_tix/packages/common/types"
 
 type Permission struct {
 	types.BaseModel
-	Name string `json:"name"`
+	Name string `gorm:"type:varchar(50)" json:"name"`
 }
