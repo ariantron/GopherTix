@@ -1,4 +1,4 @@
-package gorm_impls
+package repositories
 
 import (
 	"context"
@@ -6,6 +6,19 @@ import (
 	"gorm.io/gorm"
 	"time"
 )
+
+type UserRepository interface {
+	Create(ctx context.Context, user *models.User) error
+	GetByID(ctx context.Context, user *models.User) (*models.User, error)
+	GetByEmail(ctx context.Context, email string) (*models.User, error)
+	Update(ctx context.Context, user *models.User) error
+	Delete(ctx context.Context, user *models.User) error
+	List(ctx context.Context, offset, limit int) ([]*models.User, error)
+	Count(ctx context.Context) (int64, error)
+	UpdateVerificationStatus(ctx context.Context, user *models.User, verifiedAt time.Time) error
+	SoftDelete(ctx context.Context, user *models.User) error
+	Restore(ctx context.Context, user *models.User) error
+}
 
 type Repository struct {
 	db *gorm.DB
@@ -61,14 +74,6 @@ func (r *Repository) Count(ctx context.Context) (int64, error) {
 
 func (r *Repository) UpdateVerificationStatus(ctx context.Context, user *models.User, verifiedAt time.Time) error {
 	return r.db.WithContext(ctx).Model(user).Update("verified_at", verifiedAt).Error
-}
-
-func (r *Repository) GetUnverifiedUsers(ctx context.Context) ([]*models.User, error) {
-	var users []*models.User
-	if err := r.db.WithContext(ctx).Where("verified_at IS NULL").Find(&users).Error; err != nil {
-		return nil, err
-	}
-	return users, nil
 }
 
 func (r *Repository) SoftDelete(ctx context.Context, user *models.User) error {
