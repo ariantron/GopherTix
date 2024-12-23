@@ -10,7 +10,7 @@ type Verify struct {
 	UserID uuid.UUID `gorm:"type:uuid" json:"user_id"`
 	User   User      `gorm:"foreignKey:UserID" json:"user"`
 	Token  string    `json:"token"`
-	Type   TokenType `json:"type"`
+	Type   TokenType `gorm:"type:varchar(50)" json:"type"`
 }
 
 type TokenType string
