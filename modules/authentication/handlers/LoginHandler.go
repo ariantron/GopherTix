@@ -1,39 +1,39 @@
-package controllers
+package handlers
 
 import (
 	"errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 	"gopher_tix/modules/authentication/models"
 	"gopher_tix/modules/authentication/requests"
 	"gopher_tix/modules/authentication/services"
+	"log"
 	"net"
 )
 
-type LoginController interface {
+type LoginHandler interface {
 	Login(c *fiber.Ctx) error
 	RegisterRoutes(router fiber.Router)
 }
 
-type loginController struct {
+type loginHandler struct {
 	loginService services.LoginService
 	validate     *validator.Validate
 }
 
-func NewLoginController(loginService services.LoginService) LoginController {
-	return &loginController{
+func NewLoginHandler(loginService services.LoginService) LoginHandler {
+	return &loginHandler{
 		loginService: loginService,
 		validate:     validator.New(),
 	}
 }
 
-func (ctrl *loginController) RegisterRoutes(router fiber.Router) {
+func (ctrl *loginHandler) RegisterRoutes(router fiber.Router) {
 	auth := router.Group("/auth")
 	auth.Post("/login", ctrl.Login)
 }
 
-func (ctrl *loginController) Login(c *fiber.Ctx) error {
+func (ctrl *loginHandler) Login(c *fiber.Ctx) error {
 	var req requests.LoginRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -51,22 +51,31 @@ func (ctrl *loginController) Login(c *fiber.Ctx) error {
 
 	user, token, err := ctrl.loginService.ValidateUserCredentials(c.Context(), req.Email, req.Password)
 	if errors.Is(err, services.ErrInvalidCredentials) {
+		if user == nil {
+			log.Printf("Invalid login attempt from IP: %s", c.IP())
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid credentials",
+			})
+		}
+
 		loginRecord := &models.Login{
-			UserID:  uuid.Nil,
+			UserID:  user.ID,
 			IP:      net.ParseIP(c.IP()),
 			Succeed: false,
 		}
 
-		if ctrl.loginService.CreateLoginRecord(c.Context(), loginRecord) != nil {
+		if err := ctrl.loginService.CreateLoginRecord(c.Context(), loginRecord); err != nil {
+			log.Printf("Failed to create login record: %v", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to create login record",
 			})
 		}
 
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid email or password",
+			"error": "Invalid credentials",
 		})
 	} else if err != nil {
+		log.Printf("Internal server error: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Internal server error",
 		})
@@ -78,7 +87,8 @@ func (ctrl *loginController) Login(c *fiber.Ctx) error {
 		Succeed: true,
 	}
 
-	if ctrl.loginService.CreateLoginRecord(c.Context(), loginRecord) != nil {
+	if err := ctrl.loginService.CreateLoginRecord(c.Context(), loginRecord); err != nil {
+		log.Printf("Failed to create login record: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create login record",
 		})

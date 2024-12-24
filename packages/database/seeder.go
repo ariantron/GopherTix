@@ -6,5 +6,6 @@ import (
 )
 
 func Seed(db *gorm.DB) {
+	seeders.CreateSuperAdmin(db)
 	seeders.UserSeeder(db)
 }

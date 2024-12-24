@@ -1,6 +1,7 @@
-package controllers
+package handlers
 
 import (
+	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -9,22 +10,22 @@ import (
 	"gopher_tix/modules/authentication/requests"
 	"gopher_tix/modules/authentication/services"
 	"gopher_tix/packages/common/types"
-	"gopher_tix/packages/common/utils"
+	utils2 "gopher_tix/packages/utils"
 	"log"
 	"strconv"
 )
 
-type UserController struct {
+type UserHandler struct {
 	userService services.UserService
 }
 
-func NewUserController(userService services.UserService) *UserController {
-	return &UserController{
+func NewUserHandler(userService services.UserService) *UserHandler {
+	return &UserHandler{
 		userService: userService,
 	}
 }
 
-func (ctrl *UserController) RegisterRoutes(router fiber.Router) {
+func (ctrl *UserHandler) RegisterRoutes(router fiber.Router) {
 	users := router.Group("/users")
 	users.Use(middlewares.JwtProtected())
 	users.Post("/", ctrl.CreateUser)
@@ -36,8 +37,8 @@ func (ctrl *UserController) RegisterRoutes(router fiber.Router) {
 	users.Post("/:id/restore", ctrl.RestoreUser)
 }
 
-func (ctrl *UserController) CreateUser(ctx *fiber.Ctx) error {
-	req := new(requests.UserUpsertRequest)
+func (ctrl *UserHandler) CreateUser(ctx *fiber.Ctx) error {
+	req := new(requests.UserCreateRequest)
 	if err := ctx.BodyParser(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
@@ -52,7 +53,7 @@ func (ctrl *UserController) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	hashedPassword, err := utils.HashPassword(req.Password)
+	hashedPassword, err := utils2.HashPassword(req.Password)
 	if err != nil {
 		log.Printf("Failed to hash password")
 	}
@@ -74,7 +75,7 @@ func parseUUID(id string) (uuid.UUID, error) {
 	return uuid.Parse(id)
 }
 
-func (ctrl *UserController) GetUser(ctx *fiber.Ctx) error {
+func (ctrl *UserHandler) GetUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -100,31 +101,32 @@ func (ctrl *UserController) GetUser(ctx *fiber.Ctx) error {
 	return ctx.JSON(result)
 }
 
-func (ctrl *UserController) ListUsers(ctx *fiber.Ctx) error {
-	offset, _ := strconv.Atoi(ctx.Query("offset", "0"))
+func (ctrl *UserHandler) ListUsers(ctx *fiber.Ctx) error {
 	limit, _ := strconv.Atoi(ctx.Query("limit", "10"))
-
-	users, err := ctrl.userService.ListUsers(ctx.Context(), offset, limit)
-	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-
+	page, _ := strconv.Atoi(ctx.Query("page", "1"))
 	count, err := ctrl.userService.CountUsers(ctx.Context())
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
-
+	totalPages, offset := utils2.Paginate(count, page, limit)
+	users, err := ctrl.userService.ListUsers(ctx.Context(), offset, limit)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
 	return ctx.JSON(fiber.Map{
-		"users": users,
-		"total": count,
+		"users":      users,
+		"total":      count,
+		"page":       page,
+		"limit":      limit,
+		"totalPages": totalPages,
 	})
 }
 
-func (ctrl *UserController) UpdateUser(ctx *fiber.Ctx) error {
+func (ctrl *UserHandler) UpdateUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -132,7 +134,7 @@ func (ctrl *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	req := new(requests.UserUpsertRequest)
+	req := new(requests.UserUpdateRequest)
 	if err := ctx.BodyParser(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
@@ -157,7 +159,7 @@ func (ctrl *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	}
 
 	if req.Password != "" {
-		user.Password, err = utils.HashPassword(req.Password)
+		user.Password, err = utils2.HashPassword(req.Password)
 	}
 
 	if err := ctrl.userService.UpdateUser(ctx.Context(), user); err != nil {
@@ -169,7 +171,7 @@ func (ctrl *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	return ctx.JSON(user)
 }
 
-func (ctrl *UserController) DeleteUser(ctx *fiber.Ctx) error {
+func (ctrl *UserHandler) DeleteUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -191,10 +193,12 @@ func (ctrl *UserController) DeleteUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	return ctx.SendStatus(fiber.StatusNoContent)
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": fmt.Sprintf("User was deleted with id %s", user.ID),
+	})
 }
 
-func (ctrl *UserController) SoftDeleteUser(ctx *fiber.Ctx) error {
+func (ctrl *UserHandler) SoftDeleteUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -216,10 +220,12 @@ func (ctrl *UserController) SoftDeleteUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	return ctx.SendStatus(fiber.StatusNoContent)
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": fmt.Sprintf("User was deactivated with id %s", user.ID),
+	})
 }
 
-func (ctrl *UserController) RestoreUser(ctx *fiber.Ctx) error {
+func (ctrl *UserHandler) RestoreUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -241,5 +247,7 @@ func (ctrl *UserController) RestoreUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	return ctx.SendStatus(fiber.StatusOK)
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": fmt.Sprintf("User was activated with id %s", user.ID),
+	})
 }

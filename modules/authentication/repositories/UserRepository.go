@@ -32,7 +32,8 @@ func (r *Repository) Create(ctx context.Context, user *models.User) error {
 
 func (r *Repository) GetByID(ctx context.Context, user *models.User) (*models.User, error) {
 	var result models.User
-	if err := r.db.WithContext(ctx).First(&result, "id = ?", user.ID).Error; err != nil {
+	err := r.db.WithContext(ctx).Unscoped().First(&result, user.ID).Error
+	if err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -47,7 +48,7 @@ func (r *Repository) GetByEmail(ctx context.Context, email string) (*models.User
 }
 
 func (r *Repository) Update(ctx context.Context, user *models.User) error {
-	return r.db.WithContext(ctx).Save(user).Error
+	return r.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", user.ID).Updates(user).Error
 }
 
 func (r *Repository) Delete(ctx context.Context, user *models.User) error {

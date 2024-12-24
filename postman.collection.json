@@ -1,0 +1,688 @@
+{
+	"info": {
+		"_postman_id": "9bb5be5f-d21b-436b-a6d1-d7da7f67410b",
+		"name": "GopherTix",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "3846343"
+	},
+	"item": [
+		{
+			"name": "users",
+			"item": [
+				{
+					"name": "User Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"superadmin@gophertix.com\",\r\n    \"password\": \"123456\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/api/auth/login",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "successful Login",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"superadmin@gophertix.com\",\r\n    \"password\": \"Abc123\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/auth/login",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"login"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 15:34:38 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "340"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZWU5N2IyNzEtYTc0ZC00Y2E2LWE1MWUtZGEzYjEzNWY2MGE1IiwiZW1haWwiOiJzdXBlcmFkbWluQGdvcGhlcnRpeC5jb20iLCJleHAiOjE3MzUxNDA4NzgsImlhdCI6MTczNTA1NDQ3OH0.j2NGKgTlDyE8rpoxj_s5QCV5tZwQ2ZA40z9vPSgWojY\",\n    \"user\": {\n        \"email\": \"superadmin@gophertix.com\",\n        \"id\": \"ee97b271-a74d-4ca6-a51e-da3b135f60a5\"\n    }\n}"
+						},
+						{
+							"name": "Unsuccessful Login",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"superadmin@gophertix.com\",\r\n    \"password\": \"123456\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/auth/login",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"login"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 15:38:41 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "37"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": \"Invalid email or password\"\n}"
+						}
+					]
+				},
+				{
+					"name": "User List",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZWU5N2IyNzEtYTc0ZC00Y2E2LWE1MWUtZGEzYjEzNWY2MGE1IiwiZW1haWwiOiJzdXBlcmFkbWluQGdvcGhlcnRpeC5jb20iLCJleHAiOjE3MzUxNDA4NzgsImlhdCI6MTczNTA1NDQ3OH0.j2NGKgTlDyE8rpoxj_s5QCV5tZwQ2ZA40z9vPSgWojY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"page\": 2\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/api/users?page=2",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"users"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "User List",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/users",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"users"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 15:35:10 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1926"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"total\": 11,\n    \"users\": [\n        {\n            \"id\": \"ee97b271-a74d-4ca6-a51e-da3b135f60a5\",\n            \"created_at\": \"2024-12-24T19:02:05.294513+03:30\",\n            \"updated_at\": \"2024-12-24T19:02:05.294513+03:30\",\n            \"deleted_at\": null,\n            \"email\": \"superadmin@gophertix.com\"\n        },\n        {\n            \"id\": \"9237dd9e-8ecf-49c0-8e5e-cb08f007f1fb\",\n            \"created_at\": \"2024-12-24T19:02:05.386266+03:30\",\n            \"updated_at\": \"2024-12-24T19:02:05.386266+03:30\",\n            \"deleted_at\": null,\n            \"email\": \"JanfxWG@jwOaDcx.ru\"\n        },\n        {\n            \"id\": \"dc925c24-0668-4b31-b2c1-8c199bc6ff27\",\n            \"created_at\": \"2024-12-24T19:02:05.471903+03:30\",\n            \"updated_at\": \"2024-12-24T19:02:05.471903+03:30\",\n            \"deleted_at\": null,\n            \"email\": \"pmGMIiC@lwgAVBK.biz\"\n        },\n        {\n            \"id\": \"56642fe5-fc31-4a16-92fc-1089888a1345\",\n            \"created_at\": \"2024-12-24T19:02:05.551926+03:30\",\n            \"updated_at\": \"2024-12-24T19:02:05.551926+03:30\",\n            \"deleted_at\": null,\n            \"email\": \"pMwQLpH@ZStIgrm.biz\"\n        },\n        {\n            \"id\": \"a7478e9f-2645-4385-a327-2a801652828b\",\n            \"created_at\": \"2024-12-24T19:02:05.634924+03:30\",\n            \"updated_at\": \"2024-12-24T19:02:05.634924+03:30\",\n            \"deleted_at\": null,\n            \"email\": \"vHSJsyf@tsYSDtk.edu\"\n        },\n        {\n            \"id\": \"bd52927a-aed1-4d37-9a66-3c791f86075c\",\n            \"created_at\": \"2024-12-24T19:02:05.722279+03:30\",\n            \"updated_at\": \"2024-12-24T19:02:05.722279+03:30\",\n            \"deleted_at\": null,\n            \"email\": \"JsvEIDx@tYKWWQc.edu\"\n        },\n        {\n            \"id\": \"c034d2c5-6727-497a-aa7a-bedf3b5718fe\",\n            \"created_at\": \"2024-12-24T19:02:05.807031+03:30\",\n            \"updated_at\": \"2024-12-24T19:02:05.807031+03:30\",\n            \"deleted_at\": null,\n            \"email\": \"FkfDLiM@DSXTIDV.info\"\n        },\n        {\n            \"id\": \"affc0947-2629-444c-a8b5-ad7bb6fca035\",\n            \"created_at\": \"2024-12-24T19:02:05.888742+03:30\",\n            \"updated_at\": \"2024-12-24T19:02:05.888742+03:30\",\n            \"deleted_at\": null,\n            \"email\": \"BYYFglS@KWaIvwQ.top\"\n        },\n        {\n            \"id\": \"35c2b8da-550d-4952-88dc-c2417322558b\",\n            \"created_at\": \"2024-12-24T19:02:05.971583+03:30\",\n            \"updated_at\": \"2024-12-24T19:02:05.971583+03:30\",\n            \"deleted_at\": null,\n            \"email\": \"nNPtTof@LwcGVas.com\"\n        },\n        {\n            \"id\": \"b715882d-9f42-4c30-b7db-ae4341d0e5be\",\n            \"created_at\": \"2024-12-24T19:02:06.050512+03:30\",\n            \"updated_at\": \"2024-12-24T19:02:06.050512+03:30\",\n            \"deleted_at\": null,\n            \"email\": \"gTKkphr@AGOTnTO.ru\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "User Show",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZWU5N2IyNzEtYTc0ZC00Y2E2LWE1MWUtZGEzYjEzNWY2MGE1IiwiZW1haWwiOiJzdXBlcmFkbWluQGdvcGhlcnRpeC5jb20iLCJleHAiOjE3MzUxNDA4NzgsImlhdCI6MTczNTA1NDQ3OH0.j2NGKgTlDyE8rpoxj_s5QCV5tZwQ2ZA40z9vPSgWojY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/users/a7478e9f-2645-4385-a327-2a801652828b",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"a7478e9f-2645-4385-a327-2a801652828b"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "User Show",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/users/a7478e9f-2645-4385-a327-2a801652828b",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"a7478e9f-2645-4385-a327-2a801652828b"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 15:54:20 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "189"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"a7478e9f-2645-4385-a327-2a801652828b\",\n    \"created_at\": \"2024-12-24T19:02:05.634924+03:30\",\n    \"updated_at\": \"2024-12-24T19:02:05.634924+03:30\",\n    \"deleted_at\": null,\n    \"email\": \"vHSJsyf@tsYSDtk.edu\"\n}"
+						}
+					]
+				},
+				{
+					"name": "User Create",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZWU5N2IyNzEtYTc0ZC00Y2E2LWE1MWUtZGEzYjEzNWY2MGE1IiwiZW1haWwiOiJzdXBlcmFkbWluQGdvcGhlcnRpeC5jb20iLCJleHAiOjE3MzUxNDA4NzgsImlhdCI6MTczNTA1NDQ3OH0.j2NGKgTlDyE8rpoxj_s5QCV5tZwQ2ZA40z9vPSgWojY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"john@doe.com\",\r\n    \"password\": \"123456\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/api/users",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "User Create",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"john@doe.com\",\r\n    \"password\": \"123456\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/users",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"users"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 15:55:30 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "184"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"814df575-73e0-4ff5-952a-03ce59651abd\",\n    \"created_at\": \"2024-12-24T19:25:30.8035619+03:30\",\n    \"updated_at\": \"2024-12-24T19:25:30.8035619+03:30\",\n    \"deleted_at\": null,\n    \"email\": \"john@doe.com\"\n}"
+						}
+					]
+				},
+				{
+					"name": "User Update",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZWU5N2IyNzEtYTc0ZC00Y2E2LWE1MWUtZGEzYjEzNWY2MGE1IiwiZW1haWwiOiJzdXBlcmFkbWluQGdvcGhlcnRpeC5jb20iLCJleHAiOjE3MzUxNDA4NzgsImlhdCI6MTczNTA1NDQ3OH0.j2NGKgTlDyE8rpoxj_s5QCV5tZwQ2ZA40z9vPSgWojY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"jack@doe.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/api/users/a7478e9f-2645-4385-a327-2a801652828b",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"a7478e9f-2645-4385-a327-2a801652828b"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "User Update",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"jack@doe.com\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/users/a7478e9f-2645-4385-a327-2a801652828b",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"a7478e9f-2645-4385-a327-2a801652828b"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 16:00:23 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "171"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"a7478e9f-2645-4385-a327-2a801652828b\",\n    \"created_at\": \"0001-01-01T00:00:00Z\",\n    \"updated_at\": \"2024-12-24T19:30:23.7881156+03:30\",\n    \"deleted_at\": null,\n    \"email\": \"jack@doe.com\"\n}"
+						}
+					]
+				},
+				{
+					"name": "User Activate",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZWU5N2IyNzEtYTc0ZC00Y2E2LWE1MWUtZGEzYjEzNWY2MGE1IiwiZW1haWwiOiJzdXBlcmFkbWluQGdvcGhlcnRpeC5jb20iLCJleHAiOjE3MzUxNDA4NzgsImlhdCI6MTczNTA1NDQ3OH0.j2NGKgTlDyE8rpoxj_s5QCV5tZwQ2ZA40z9vPSgWojY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/users/a7478e9f-2645-4385-a327-2a801652828b/restore",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"a7478e9f-2645-4385-a327-2a801652828b",
+								"restore"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "User Activate",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/users/a7478e9f-2645-4385-a327-2a801652828b/restore",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"a7478e9f-2645-4385-a327-2a801652828b",
+										"restore"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 16:07:50 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "77"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"User was activated with id a7478e9f-2645-4385-a327-2a801652828b\"\n}"
+						}
+					]
+				},
+				{
+					"name": "User Deactivate",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZWU5N2IyNzEtYTc0ZC00Y2E2LWE1MWUtZGEzYjEzNWY2MGE1IiwiZW1haWwiOiJzdXBlcmFkbWluQGdvcGhlcnRpeC5jb20iLCJleHAiOjE3MzUxNDA4NzgsImlhdCI6MTczNTA1NDQ3OH0.j2NGKgTlDyE8rpoxj_s5QCV5tZwQ2ZA40z9vPSgWojY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/users/a7478e9f-2645-4385-a327-2a801652828b/soft",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"a7478e9f-2645-4385-a327-2a801652828b",
+								"soft"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "User Deactivate",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/users/a7478e9f-2645-4385-a327-2a801652828b/soft",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"a7478e9f-2645-4385-a327-2a801652828b",
+										"soft"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 16:07:40 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "79"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"User was deactivated with id a7478e9f-2645-4385-a327-2a801652828b\"\n}"
+						}
+					]
+				},
+				{
+					"name": "User Delete",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZWU5N2IyNzEtYTc0ZC00Y2E2LWE1MWUtZGEzYjEzNWY2MGE1IiwiZW1haWwiOiJzdXBlcmFkbWluQGdvcGhlcnRpeC5jb20iLCJleHAiOjE3MzUxNDA4NzgsImlhdCI6MTczNTA1NDQ3OH0.j2NGKgTlDyE8rpoxj_s5QCV5tZwQ2ZA40z9vPSgWojY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/users/a7478e9f-2645-4385-a327-2a801652828b",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"a7478e9f-2645-4385-a327-2a801652828b"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "User Delete",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/users/a7478e9f-2645-4385-a327-2a801652828b",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"a7478e9f-2645-4385-a327-2a801652828b"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 16:08:14 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "75"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"User was deleted with id a7478e9f-2645-4385-a327-2a801652828b\"\n}"
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "host",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}

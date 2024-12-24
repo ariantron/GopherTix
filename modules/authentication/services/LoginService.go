@@ -42,12 +42,12 @@ func (s *loginService) ValidateUserCredentials(ctx context.Context, email, passw
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return nil, "", ErrInvalidCredentials
+		return user, "", ErrInvalidCredentials
 	}
 
 	token, err := middlewares.GenerateToken(user.ID.String(), user.Email)
 	if err != nil {
-		return nil, "", ErrFailedGenerateToken
+		return user, "", ErrFailedGenerateToken
 	}
 
 	return user, token, nil

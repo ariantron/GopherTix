@@ -1,7 +1,6 @@
 package main
 
 import (
-	"gopher_tix/configs"
 	"gopher_tix/packages/database"
 	"gopher_tix/server"
 )
@@ -9,8 +8,6 @@ import (
 func main() {
 	db := database.ConnectDB()
 	database.Migrate(db)
-	if configs.AppEnv == configs.DEV {
-		database.Seed(db)
-	}
+	database.Seed(db)
 	server.Serve(db)
 }
