@@ -1,17 +1,20 @@
 package controllers
 
 import (
+	"errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"gopher_tix/modules/authentication/middlewares"
 	"gopher_tix/modules/authentication/models"
-	"gopher_tix/modules/authentication/services"
 	"gopher_tix/modules/authentication/requests"
+	"gopher_tix/modules/authentication/services"
 	"net"
 )
 
 type LoginController interface {
 	Login(c *fiber.Ctx) error
+	RegisterRoutes(router fiber.Router)
 }
 
 type loginController struct {
@@ -28,7 +31,7 @@ func NewLoginController(loginService services.LoginService) LoginController {
 
 func (ctrl *loginController) RegisterRoutes(router fiber.Router) {
 	auth := router.Group("/auth")
-	auth.Post("/", ctrl.Login)
+	auth.Post("/login", ctrl.Login)
 }
 
 func (ctrl *loginController) Login(c *fiber.Ctx) error {
@@ -40,14 +43,15 @@ func (ctrl *loginController) Login(c *fiber.Ctx) error {
 	}
 
 	if err := ctrl.validate.Struct(req); err != nil {
-		validationErrors := err.(validator.ValidationErrors)
+		var validationErrors validator.ValidationErrors
+		errors.As(err, &validationErrors)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": validationErrors.Error(),
 		})
 	}
 
-	user, token, err := ctrl.loginService.ValidateUserCredentials(c.Context(), req.Email, req.Password)
-	if err == services.ErrInvalidCredentials {
+	user, _, err := ctrl.loginService.ValidateUserCredentials(c.Context(), req.Email, req.Password)
+	if errors.Is(err, services.ErrInvalidCredentials) {
 		loginRecord := &models.Login{
 			UserID:  uuid.Nil,
 			IP:      net.ParseIP(c.IP()),
@@ -61,6 +65,13 @@ func (ctrl *loginController) Login(c *fiber.Ctx) error {
 	} else if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Internal server error",
+		})
+	}
+
+	token, err := middlewares.GenerateToken(user.ID.String(), user.Email)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to generate token",
 		})
 	}
 

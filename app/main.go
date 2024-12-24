@@ -1,63 +1,13 @@
 package main
 
 import (
-	"fmt"
-	"github.com/joho/godotenv"
-	"gopher_tix/configs"
-	autnmodels "gopher_tix/modules/authentication/models"
-	autzmodels "gopher_tix/modules/authorization/models"
-	profmodels "gopher_tix/modules/profile/models"
-	tcktmodels "gopher_tix/modules/ticketing/models"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"log"
+	"gopher_tix/packages/database"
+	"gopher_tix/packages/init"
 )
 
 func main() {
-	loadEnv()
-	dsn := buildDSN()
-	db := connectToDB(dsn)
-	runMigrations(db)
-}
-
-func loadEnv() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-}
-
-func buildDSN() string {
-	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		configs.DBHost, configs.DBUser, configs.DBPassword, configs.DBName, configs.DBPort, configs.DBSSLMode)
-}
-
-func connectToDB(dsn string) *gorm.DB {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("Error connecting to the database: %v", err)
-	}
-	return db
-}
-
-func runMigrations(db *gorm.DB) {
-	err := db.AutoMigrate(
-		&autnmodels.Login{},
-		&autnmodels.User{},
-		&autzmodels.Group{},
-		&autzmodels.Permission{},
-		&autzmodels.Role{},
-		&autzmodels.RolePermission{},
-		&autzmodels.UserPermission{},
-		&autzmodels.UserRole{},
-		&profmodels.Profile{},
-		&profmodels.ProfileField{},
-		&profmodels.Field{},
-		&tcktmodels.Ticket{},
-		&tcktmodels.Comment{},
-	)
-	if err != nil {
-		log.Fatalf("Error migrating the models: %v", err)
-	}
-	fmt.Println("Database migrated successfully")
+	init.LoadEnv()
+	db := database.ConnectDB()
+	database.RunMigrations(db)
+	serve(db)
 }

@@ -22,7 +22,7 @@ type Repository struct {
 	db *gorm.DB
 }
 
-func NewGormRepository(db *gorm.DB) *Repository {
+func NewUserRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 

@@ -8,9 +8,9 @@ import (
 var SecretKey []byte
 
 func init() {
-	secretKey := os.Getenv("JWT_SECRET_KEY")
+	secretKey := os.Getenv("JWT_SECRET")
 	if secretKey == "" {
-		log.Fatalf("JWT_SECRET_KEY is not set in the .env file")
+		log.Fatalf("JWT_SECRET is not set in the .env file")
 	}
 	SecretKey = []byte(secretKey)
 }

@@ -6,23 +6,23 @@ import (
 )
 
 var (
-	DBHost     string
-	DBPort     string
-	DBUser     string
-	DBPassword string
-	DBName     string
-	DBSSLMode  string
+	DbHost     string
+	DbPort     string
+	DbUser     string
+	DbPassword string
+	DbName     string
+	DbSslMode  string
 )
 
 func init() {
-	DBHost = os.Getenv("DB_HOST")
-	DBPort = os.Getenv("DB_PORT")
-	DBUser = os.Getenv("DB_USER")
-	DBPassword = os.Getenv("DB_PASSWORD")
-	DBName = os.Getenv("DB_NAME")
-	DBSSLMode = os.Getenv("DB_SSLMODE")
+	DbHost = os.Getenv("DB_HOST")
+	DbPort = os.Getenv("DB_PORT")
+	DbUser = os.Getenv("DB_USER")
+	DbPassword = os.Getenv("DB_PASSWORD")
+	DbName = os.Getenv("DB_NAME")
+	DbSslMode = os.Getenv("DB_SSLMODE")
 
-	if DBHost == "" || DBPort == "" || DBUser == "" || DBPassword == "" || DBName == "" || DBSSLMode == "" {
+	if DbHost == "" || DbPort == "" || DbUser == "" || DbPassword == "" || DbName == "" || DbSslMode == "" {
 		log.Fatalf("Missing required environment variable(s) for DB configuration")
 	}
 }

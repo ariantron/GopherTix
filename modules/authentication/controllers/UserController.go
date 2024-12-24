@@ -1,13 +1,14 @@
 package controllers
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"gopher_tix/modules/authentication/middlewares"
 	"gopher_tix/modules/authentication/models"
-	"gopher_tix/modules/authentication/services"
 	"gopher_tix/modules/authentication/requests"
+	"gopher_tix/modules/authentication/services"
 	"gopher_tix/packages/common/types"
-	"github.com/go-playground/validator/v10"
 	"strconv"
 )
 
@@ -23,6 +24,7 @@ func NewUserController(userService services.UserService) *UserController {
 
 func (ctrl *UserController) RegisterRoutes(router fiber.Router) {
 	users := router.Group("/users")
+	users.Use(middlewares.Protected())
 	users.Post("/", ctrl.CreateUser)
 	users.Get("/:id", ctrl.GetUser)
 	users.Get("/", ctrl.ListUsers)
@@ -43,7 +45,7 @@ func (ctrl *UserController) CreateUser(ctx *fiber.Ctx) error {
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Validation failed",
+			"error":   "Validation failed",
 			"details": err.Error(),
 		})
 	}
@@ -61,7 +63,6 @@ func (ctrl *UserController) CreateUser(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusCreated).JSON(user)
 }
-
 
 func parseUUID(id string) (uuid.UUID, error) {
 	return uuid.Parse(id)
@@ -135,7 +136,7 @@ func (ctrl *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Validation failed",
+			"error":   "Validation failed",
 			"details": err.Error(),
 		})
 	}
