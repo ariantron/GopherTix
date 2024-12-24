@@ -1,7 +1,8 @@
-package main
+package server
 
 import (
 	"fmt"
+	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -18,7 +19,7 @@ import (
 	"time"
 )
 
-func serve(db *gorm.DB) {
+func Serve(db *gorm.DB) {
 	app := fiber.New(fiber.Config{
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
@@ -26,6 +27,12 @@ func serve(db *gorm.DB) {
 
 	app.Use(logger.New())
 	app.Use(recover.New())
+	app.Use(swagger.New(swagger.Config{
+		BasePath: "/",
+		FilePath: "./docs/swagger.json",
+		Path:     "swagger",
+		Title:    "Swagger API Docs",
+	}))
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",

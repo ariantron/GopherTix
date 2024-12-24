@@ -5,7 +5,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"gopher_tix/modules/authentication/middlewares"
 	"gopher_tix/modules/authentication/models"
 	"gopher_tix/modules/authentication/requests"
 	"gopher_tix/modules/authentication/services"
@@ -50,14 +49,19 @@ func (ctrl *loginController) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	user, _, err := ctrl.loginService.ValidateUserCredentials(c.Context(), req.Email, req.Password)
+	user, token, err := ctrl.loginService.ValidateUserCredentials(c.Context(), req.Email, req.Password)
 	if errors.Is(err, services.ErrInvalidCredentials) {
 		loginRecord := &models.Login{
 			UserID:  uuid.Nil,
 			IP:      net.ParseIP(c.IP()),
 			Succeed: false,
 		}
-		_ = ctrl.loginService.CreateLoginRecord(c.Context(), loginRecord)
+
+		if ctrl.loginService.CreateLoginRecord(c.Context(), loginRecord) != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to create login record",
+			})
+		}
 
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid email or password",
@@ -68,19 +72,13 @@ func (ctrl *loginController) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	token, err := middlewares.GenerateToken(user.ID.String(), user.Email)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to generate token",
-		})
-	}
-
 	loginRecord := &models.Login{
 		UserID:  user.ID,
 		IP:      net.ParseIP(c.IP()),
 		Succeed: true,
 	}
-	if err := ctrl.loginService.CreateLoginRecord(c.Context(), loginRecord); err != nil {
+
+	if ctrl.loginService.CreateLoginRecord(c.Context(), loginRecord) != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create login record",
 		})

@@ -3,16 +3,15 @@ package services
 import (
 	"context"
 	"errors"
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-	"gopher_tix/configs"
+	"gopher_tix/modules/authentication/middlewares"
 	"gopher_tix/modules/authentication/models"
 	"gopher_tix/modules/authentication/repositories"
-	"time"
 )
 
 var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidCredentials  = errors.New("invalid credentials")
+	ErrFailedGenerateToken = errors.New("failed to generate token")
 )
 
 type LoginService interface {
@@ -46,22 +45,10 @@ func (s *loginService) ValidateUserCredentials(ctx context.Context, email, passw
 		return nil, "", ErrInvalidCredentials
 	}
 
-	token, err := s.generateJWTToken(user)
+	token, err := middlewares.GenerateToken(user.ID.String(), user.Email)
 	if err != nil {
-		return nil, "", err
+		return nil, "", ErrFailedGenerateToken
 	}
 
 	return user, token, nil
-}
-
-func (s *loginService) generateJWTToken(user *models.User) (string, error) {
-	claims := jwt.MapClaims{
-		"user_id": user.ID.String(),
-		"email":   user.Email,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
-		"iat":     time.Now().Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(configs.SecretKey)
 }

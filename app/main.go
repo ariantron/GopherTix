@@ -1,13 +1,16 @@
 package main
 
 import (
+	"gopher_tix/configs"
 	"gopher_tix/packages/database"
-	"gopher_tix/packages/init"
+	"gopher_tix/server"
 )
 
 func main() {
-	init.LoadEnv()
 	db := database.ConnectDB()
-	database.RunMigrations(db)
-	serve(db)
+	database.Migrate(db)
+	if configs.AppEnv == configs.DEV {
+		database.Seed(db)
+	}
+	server.Serve(db)
 }

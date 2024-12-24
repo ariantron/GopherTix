@@ -9,6 +9,8 @@ import (
 	"gopher_tix/modules/authentication/requests"
 	"gopher_tix/modules/authentication/services"
 	"gopher_tix/packages/common/types"
+	"gopher_tix/packages/common/utils"
+	"log"
 	"strconv"
 )
 
@@ -24,7 +26,7 @@ func NewUserController(userService services.UserService) *UserController {
 
 func (ctrl *UserController) RegisterRoutes(router fiber.Router) {
 	users := router.Group("/users")
-	users.Use(middlewares.Protected())
+	users.Use(middlewares.JwtProtected())
 	users.Post("/", ctrl.CreateUser)
 	users.Get("/:id", ctrl.GetUser)
 	users.Get("/", ctrl.ListUsers)
@@ -50,9 +52,13 @@ func (ctrl *UserController) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		log.Printf("Failed to hash password")
+	}
 	user := &models.User{
 		Email:    req.Email,
-		Password: req.Password,
+		Password: hashedPassword,
 	}
 
 	if err := ctrl.userService.CreateUser(ctx.Context(), user); err != nil {
@@ -151,7 +157,7 @@ func (ctrl *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	}
 
 	if req.Password != "" {
-		user.Password = req.Password
+		user.Password, err = utils.HashPassword(req.Password)
 	}
 
 	if err := ctrl.userService.UpdateUser(ctx.Context(), user); err != nil {

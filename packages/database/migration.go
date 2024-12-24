@@ -10,7 +10,7 @@ import (
 	"log"
 )
 
-func RunMigrations(db *gorm.DB) {
+func Migrate(db *gorm.DB) {
 	err := db.AutoMigrate(
 		&autnmodels.Login{},
 		&autnmodels.User{},

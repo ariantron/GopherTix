@@ -28,7 +28,7 @@ func GenerateToken(userID, email string) (string, error) {
 	return token.SignedString(configs.SecretKey)
 }
 
-func Protected() fiber.Handler {
+func JwtProtected() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
