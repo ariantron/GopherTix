@@ -19,18 +19,18 @@ func NewUserController(userService services.UserService) *UserController {
 	}
 }
 
-func (c *UserController) Register(router fiber.Router) {
+func (ctrl *UserController) RegisterRoutes(router fiber.Router) {
 	users := router.Group("/users")
-	users.Post("/", c.CreateUser)
-	users.Get("/:id", c.GetUser)
-	users.Get("/", c.ListUsers)
-	users.Put("/:id", c.UpdateUser)
-	users.Delete("/:id", c.DeleteUser)
-	users.Delete("/:id/soft", c.SoftDeleteUser)
-	users.Post("/:id/restore", c.RestoreUser)
+	users.Post("/", ctrl.CreateUser)
+	users.Get("/:id", ctrl.GetUser)
+	users.Get("/", ctrl.ListUsers)
+	users.Put("/:id", ctrl.UpdateUser)
+	users.Delete("/:id", ctrl.DeleteUser)
+	users.Delete("/:id/soft", ctrl.SoftDeleteUser)
+	users.Post("/:id/restore", ctrl.RestoreUser)
 }
 
-func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
+func (ctrl *UserController) CreateUser(ctx *fiber.Ctx) error {
 	user := new(models.User)
 	if err := ctx.BodyParser(user); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -38,7 +38,7 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	if err := c.userService.CreateUser(ctx.Context(), user); err != nil {
+	if err := ctrl.userService.CreateUser(ctx.Context(), user); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -51,7 +51,7 @@ func parseUUID(id string) (uuid.UUID, error) {
 	return uuid.Parse(id)
 }
 
-func (c *UserController) GetUser(ctx *fiber.Ctx) error {
+func (ctrl *UserController) GetUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -67,7 +67,7 @@ func (c *UserController) GetUser(ctx *fiber.Ctx) error {
 		},
 	}
 
-	result, err := c.userService.GetUserByID(ctx.Context(), user)
+	result, err := ctrl.userService.GetUserByID(ctx.Context(), user)
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "User not found",
@@ -77,18 +77,18 @@ func (c *UserController) GetUser(ctx *fiber.Ctx) error {
 	return ctx.JSON(result)
 }
 
-func (c *UserController) ListUsers(ctx *fiber.Ctx) error {
+func (ctrl *UserController) ListUsers(ctx *fiber.Ctx) error {
 	offset, _ := strconv.Atoi(ctx.Query("offset", "0"))
 	limit, _ := strconv.Atoi(ctx.Query("limit", "10"))
 
-	users, err := c.userService.ListUsers(ctx.Context(), offset, limit)
+	users, err := ctrl.userService.ListUsers(ctx.Context(), offset, limit)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
-	count, err := c.userService.CountUsers(ctx.Context())
+	count, err := ctrl.userService.CountUsers(ctx.Context())
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -101,7 +101,7 @@ func (c *UserController) ListUsers(ctx *fiber.Ctx) error {
 	})
 }
 
-func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
+func (ctrl *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -117,7 +117,7 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	}
 
 	user.ID = id
-	if err := c.userService.UpdateUser(ctx.Context(), user); err != nil {
+	if err := ctrl.userService.UpdateUser(ctx.Context(), user); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -126,7 +126,7 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	return ctx.JSON(user)
 }
 
-func (c *UserController) DeleteUser(ctx *fiber.Ctx) error {
+func (ctrl *UserController) DeleteUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -142,7 +142,7 @@ func (c *UserController) DeleteUser(ctx *fiber.Ctx) error {
 		},
 	}
 
-	if err := c.userService.DeleteUser(ctx.Context(), user); err != nil {
+	if err := ctrl.userService.DeleteUser(ctx.Context(), user); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -151,7 +151,7 @@ func (c *UserController) DeleteUser(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
-func (c *UserController) SoftDeleteUser(ctx *fiber.Ctx) error {
+func (ctrl *UserController) SoftDeleteUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -167,7 +167,7 @@ func (c *UserController) SoftDeleteUser(ctx *fiber.Ctx) error {
 		},
 	}
 
-	if err := c.userService.SoftDeleteUser(ctx.Context(), user); err != nil {
+	if err := ctrl.userService.SoftDeleteUser(ctx.Context(), user); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -176,7 +176,7 @@ func (c *UserController) SoftDeleteUser(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
-func (c *UserController) RestoreUser(ctx *fiber.Ctx) error {
+func (ctrl *UserController) RestoreUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -192,7 +192,7 @@ func (c *UserController) RestoreUser(ctx *fiber.Ctx) error {
 		},
 	}
 
-	if err := c.userService.RestoreUser(ctx.Context(), user); err != nil {
+	if err := ctrl.userService.RestoreUser(ctx.Context(), user); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})

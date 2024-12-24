@@ -4,7 +4,6 @@ import (
 	"context"
 	"gopher_tix/modules/authentication/models"
 	"gopher_tix/modules/authentication/repositories"
-	"time"
 )
 
 type UserService interface {
@@ -15,57 +14,52 @@ type UserService interface {
 	DeleteUser(ctx context.Context, user *models.User) error
 	ListUsers(ctx context.Context, offset, limit int) ([]*models.User, error)
 	CountUsers(ctx context.Context) (int64, error)
-	UpdateUserVerificationStatus(ctx context.Context, user *models.User, verifiedAt time.Time) error
 	SoftDeleteUser(ctx context.Context, user *models.User) error
 	RestoreUser(ctx context.Context, user *models.User) error
 }
 
 type userService struct {
-	repo repositories.UserRepository
+	userRepo repositories.UserRepository
 }
 
-func NewUserService(repo repositories.UserRepository) UserService {
+func NewUserService(userRepo repositories.UserRepository) UserService {
 	return &userService{
-		repo: repo,
+		userRepo: userRepo,
 	}
 }
 
 func (s *userService) CreateUser(ctx context.Context, user *models.User) error {
-	return s.repo.Create(ctx, user)
+	return s.userRepo.Create(ctx, user)
 }
 
 func (s *userService) GetUserByID(ctx context.Context, user *models.User) (*models.User, error) {
-	return s.repo.GetByID(ctx, user)
+	return s.userRepo.GetByID(ctx, user)
 }
 
 func (s *userService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	return s.repo.GetByEmail(ctx, email)
+	return s.userRepo.GetByEmail(ctx, email)
 }
 
 func (s *userService) UpdateUser(ctx context.Context, user *models.User) error {
-	return s.repo.Update(ctx, user)
+	return s.userRepo.Update(ctx, user)
 }
 
 func (s *userService) DeleteUser(ctx context.Context, user *models.User) error {
-	return s.repo.Delete(ctx, user)
+	return s.userRepo.Delete(ctx, user)
 }
 
 func (s *userService) ListUsers(ctx context.Context, offset, limit int) ([]*models.User, error) {
-	return s.repo.List(ctx, offset, limit)
+	return s.userRepo.List(ctx, offset, limit)
 }
 
 func (s *userService) CountUsers(ctx context.Context) (int64, error) {
-	return s.repo.Count(ctx)
-}
-
-func (s *userService) UpdateUserVerificationStatus(ctx context.Context, user *models.User, verifiedAt time.Time) error {
-	return s.repo.UpdateVerificationStatus(ctx, user, verifiedAt)
+	return s.userRepo.Count(ctx)
 }
 
 func (s *userService) SoftDeleteUser(ctx context.Context, user *models.User) error {
-	return s.repo.SoftDelete(ctx, user)
+	return s.userRepo.SoftDelete(ctx, user)
 }
 
 func (s *userService) RestoreUser(ctx context.Context, user *models.User) error {
-	return s.repo.Restore(ctx, user)
+	return s.userRepo.Restore(ctx, user)
 }

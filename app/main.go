@@ -15,7 +15,7 @@ import (
 
 func main() {
 	loadEnv()
-	dsn := buildDSN(configs.LoadDB())
+	dsn := buildDSN()
 	db := connectToDB(dsn)
 	runMigrations(db)
 }
@@ -27,9 +27,9 @@ func loadEnv() {
 	}
 }
 
-func buildDSN(config *configs.DB) string {
+func buildDSN() string {
 	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		config.DBHost, config.DBUser, config.DBPassword, config.DBName, config.DBPort, config.DBSSLMode)
+		configs.DBHost, configs.DBUser, configs.DBPassword, configs.DBName, configs.DBPort, configs.DBSSLMode)
 }
 
 func connectToDB(dsn string) *gorm.DB {
@@ -44,7 +44,6 @@ func runMigrations(db *gorm.DB) {
 	err := db.AutoMigrate(
 		&autnmodels.Login{},
 		&autnmodels.User{},
-		&autnmodels.Verify{},
 		&autzmodels.Group{},
 		&autzmodels.Permission{},
 		&autzmodels.Role{},

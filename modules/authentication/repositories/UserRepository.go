@@ -4,7 +4,6 @@ import (
 	"context"
 	"gopher_tix/modules/authentication/models"
 	"gorm.io/gorm"
-	"time"
 )
 
 type UserRepository interface {
@@ -15,7 +14,6 @@ type UserRepository interface {
 	Delete(ctx context.Context, user *models.User) error
 	List(ctx context.Context, offset, limit int) ([]*models.User, error)
 	Count(ctx context.Context) (int64, error)
-	UpdateVerificationStatus(ctx context.Context, user *models.User, verifiedAt time.Time) error
 	SoftDelete(ctx context.Context, user *models.User) error
 	Restore(ctx context.Context, user *models.User) error
 }
@@ -70,10 +68,6 @@ func (r *Repository) Count(ctx context.Context) (int64, error) {
 		return 0, err
 	}
 	return count, nil
-}
-
-func (r *Repository) UpdateVerificationStatus(ctx context.Context, user *models.User, verifiedAt time.Time) error {
-	return r.db.WithContext(ctx).Model(user).Update("verified_at", verifiedAt).Error
 }
 
 func (r *Repository) SoftDelete(ctx context.Context, user *models.User) error {
