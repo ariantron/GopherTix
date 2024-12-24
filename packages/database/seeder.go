@@ -1,11 +1,13 @@
 package database
 
 import (
-	"gopher_tix/modules/authentication/seeders"
+	autnseeders "gopher_tix/modules/authentication/seeders"
+	autzseeders "gopher_tix/modules/authorization/seeders"
 	"gorm.io/gorm"
 )
 
 func Seed(db *gorm.DB) {
-	seeders.CreateSuperAdmin(db)
-	seeders.UserSeeder(db)
+	autnseeders.CreateSuperAdmin(db)
+	autnseeders.UserSeeder(db)
+	autzseeders.RoleSeeder(db)
 }
