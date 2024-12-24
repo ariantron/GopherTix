@@ -5,7 +5,9 @@ import (
 	"github.com/google/uuid"
 	"gopher_tix/modules/authentication/models"
 	"gopher_tix/modules/authentication/services"
+	"gopher_tix/modules/authentication/requests"
 	"gopher_tix/packages/common/types"
+	"github.com/go-playground/validator/v10"
 	"strconv"
 )
 
@@ -31,11 +33,24 @@ func (ctrl *UserController) RegisterRoutes(router fiber.Router) {
 }
 
 func (ctrl *UserController) CreateUser(ctx *fiber.Ctx) error {
-	user := new(models.User)
-	if err := ctx.BodyParser(user); err != nil {
+	req := new(requests.UserUpsertRequest)
+	if err := ctx.BodyParser(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Validation failed",
+			"details": err.Error(),
+		})
+	}
+
+	user := &models.User{
+		Email:    req.Email,
+		Password: req.Password,
 	}
 
 	if err := ctrl.userService.CreateUser(ctx.Context(), user); err != nil {
@@ -46,6 +61,7 @@ func (ctrl *UserController) CreateUser(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusCreated).JSON(user)
 }
+
 
 func parseUUID(id string) (uuid.UUID, error) {
 	return uuid.Parse(id)
@@ -109,14 +125,34 @@ func (ctrl *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	user := new(models.User)
-	if err := ctx.BodyParser(user); err != nil {
+	req := new(requests.UserUpsertRequest)
+	if err := ctx.BodyParser(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
 	}
 
-	user.ID = id
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Validation failed",
+			"details": err.Error(),
+		})
+	}
+
+	user := &models.User{
+		SoftDeleteModel: types.SoftDeleteModel{
+			BaseModel: types.BaseModel{
+				ID: id,
+			},
+		},
+		Email: req.Email,
+	}
+
+	if req.Password != "" {
+		user.Password = req.Password
+	}
+
 	if err := ctrl.userService.UpdateUser(ctx.Context(), user); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

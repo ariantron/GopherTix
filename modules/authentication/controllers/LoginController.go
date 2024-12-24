@@ -6,13 +6,9 @@ import (
 	"github.com/google/uuid"
 	"gopher_tix/modules/authentication/models"
 	"gopher_tix/modules/authentication/services"
+	"gopher_tix/modules/authentication/requests"
 	"net"
 )
-
-type LoginRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=6"`
-}
 
 type LoginController interface {
 	Login(c *fiber.Ctx) error
@@ -36,7 +32,7 @@ func (ctrl *loginController) RegisterRoutes(router fiber.Router) {
 }
 
 func (ctrl *loginController) Login(c *fiber.Ctx) error {
-	var req LoginRequest
+	var req requests.LoginRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
@@ -82,8 +78,8 @@ func (ctrl *loginController) Login(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"token": token,
 		"user": fiber.Map{
-			"id":          user.ID,
-			"email":       user.Email,
+			"id":    user.ID,
+			"email": user.Email,
 		},
 	})
 }
