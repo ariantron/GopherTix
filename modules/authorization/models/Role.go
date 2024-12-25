@@ -6,6 +6,5 @@ import (
 
 type Role struct {
 	types.BaseModel
-	Name        string           `gorm:"type:varchar(50)" json:"name"`
-	Permissions []RolePermission `gorm:"foreignKey:RoleID" json:"permissions"`
+	Name string `gorm:"type:varchar(50)" json:"name"`
 }
