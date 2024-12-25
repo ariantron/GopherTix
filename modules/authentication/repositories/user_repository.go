@@ -12,7 +12,7 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	Update(ctx context.Context, user *models.User) error
 	Delete(ctx context.Context, user *models.User) error
-	List(ctx context.Context, offset, limit int) ([]*models.User, error)
+	List(ctx context.Context, offset, limit int, search string) ([]*models.User, error)
 	Count(ctx context.Context) (int64, error)
 	SoftDelete(ctx context.Context, user *models.User) error
 	Restore(ctx context.Context, user *models.User) error
@@ -55,9 +55,15 @@ func (r *Repository) Delete(ctx context.Context, user *models.User) error {
 	return r.db.WithContext(ctx).Delete(user).Error
 }
 
-func (r *Repository) List(ctx context.Context, offset int, limit int) ([]*models.User, error) {
+func (r *Repository) List(ctx context.Context, offset int, limit int, search string) ([]*models.User, error) {
+	query := r.db.WithContext(ctx)
+
+	if search != "" {
+		query = query.Where("name ILIKE ?", "%"+search+"%")
+	}
+
 	var users []*models.User
-	if err := r.db.WithContext(ctx).Offset(offset).Limit(limit).Find(&users).Error; err != nil {
+	if err := query.Offset(offset).Limit(limit).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil

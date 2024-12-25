@@ -104,6 +104,7 @@ func (ctrl *UserHandler) GetUser(ctx *fiber.Ctx) error {
 func (ctrl *UserHandler) ListUsers(ctx *fiber.Ctx) error {
 	limit, _ := strconv.Atoi(ctx.Query("limit", "10"))
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
+	search := ctx.Query(`search`, "")
 	count, err := ctrl.userService.CountUsers(ctx.Context())
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -111,7 +112,7 @@ func (ctrl *UserHandler) ListUsers(ctx *fiber.Ctx) error {
 		})
 	}
 	totalPages, offset := utils.Paginate(count, page, limit)
-	users, err := ctrl.userService.ListUsers(ctx.Context(), offset, limit)
+	users, err := ctrl.userService.ListUsers(ctx.Context(), offset, limit, search)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
