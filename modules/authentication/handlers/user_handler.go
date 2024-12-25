@@ -10,7 +10,7 @@ import (
 	"gopher_tix/modules/authentication/requests"
 	"gopher_tix/modules/authentication/services"
 	"gopher_tix/packages/common/types"
-	utils2 "gopher_tix/packages/utils"
+	"gopher_tix/packages/utils"
 	"log"
 	"strconv"
 )
@@ -53,7 +53,7 @@ func (ctrl *UserHandler) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	hashedPassword, err := utils2.HashPassword(req.Password)
+	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
 		log.Printf("Failed to hash password")
 	}
@@ -110,7 +110,7 @@ func (ctrl *UserHandler) ListUsers(ctx *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
-	totalPages, offset := utils2.Paginate(count, page, limit)
+	totalPages, offset := utils.Paginate(count, page, limit)
 	users, err := ctrl.userService.ListUsers(ctx.Context(), offset, limit)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -159,7 +159,7 @@ func (ctrl *UserHandler) UpdateUser(ctx *fiber.Ctx) error {
 	}
 
 	if req.Password != "" {
-		user.Password, err = utils2.HashPassword(req.Password)
+		user.Password, err = utils.HashPassword(req.Password)
 	}
 
 	if err := ctrl.userService.UpdateUser(ctx.Context(), user); err != nil {

@@ -55,7 +55,7 @@ func (r *Repository) Delete(ctx context.Context, user *models.User) error {
 	return r.db.WithContext(ctx).Delete(user).Error
 }
 
-func (r *Repository) List(ctx context.Context, offset, limit int) ([]*models.User, error) {
+func (r *Repository) List(ctx context.Context, offset int, limit int) ([]*models.User, error) {
 	var users []*models.User
 	if err := r.db.WithContext(ctx).Offset(offset).Limit(limit).Find(&users).Error; err != nil {
 		return nil, err

@@ -24,6 +24,7 @@ func CreateSuperAdmin(db *gorm.DB) {
 	}
 
 	user := models.User{
+		Name:     "Super Admin",
 		Email:    "superadmin@gophertix.com",
 		Password: hashedPassword,
 	}
@@ -51,7 +52,9 @@ func UserSeeder(db *gorm.DB) {
 			log.Printf("Failed to hash password for user %d: %v", i+1, err)
 			continue
 		}
+		fullName := faker.FirstName() + " " + faker.LastName()
 		user := models.User{
+			Name:     fullName,
 			Email:    faker.Email(),
 			Password: hashedPassword,
 		}

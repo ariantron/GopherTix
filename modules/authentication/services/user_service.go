@@ -48,7 +48,7 @@ func (s *userService) DeleteUser(ctx context.Context, user *models.User) error {
 	return s.userRepo.Delete(ctx, user)
 }
 
-func (s *userService) ListUsers(ctx context.Context, offset, limit int) ([]*models.User, error) {
+func (s *userService) ListUsers(ctx context.Context, offset int, limit int) ([]*models.User, error) {
 	return s.userRepo.List(ctx, offset, limit)
 }
 
