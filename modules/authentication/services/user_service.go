@@ -12,8 +12,8 @@ type UserService interface {
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	UpdateUser(ctx context.Context, user *models.User) error
 	DeleteUser(ctx context.Context, user *models.User) error
-	ListUsers(ctx context.Context, offset, limit int, search string) ([]*models.User, error)
-	CountUsers(ctx context.Context) (int64, error)
+	ListUsers(ctx context.Context, offset, limit int, search *string) ([]*models.User, error)
+	CountUsers(ctx context.Context, search *string) (int64, error)
 	SoftDeleteUser(ctx context.Context, user *models.User) error
 	RestoreUser(ctx context.Context, user *models.User) error
 }
@@ -48,12 +48,12 @@ func (s *userService) DeleteUser(ctx context.Context, user *models.User) error {
 	return s.userRepo.Delete(ctx, user)
 }
 
-func (s *userService) ListUsers(ctx context.Context, offset int, limit int, search string) ([]*models.User, error) {
+func (s *userService) ListUsers(ctx context.Context, offset int, limit int, search *string) ([]*models.User, error) {
 	return s.userRepo.List(ctx, offset, limit, search)
 }
 
-func (s *userService) CountUsers(ctx context.Context) (int64, error) {
-	return s.userRepo.Count(ctx)
+func (s *userService) CountUsers(ctx context.Context, search *string) (int64, error) {
+	return s.userRepo.Count(ctx, search)
 }
 
 func (s *userService) SoftDeleteUser(ctx context.Context, user *models.User) error {

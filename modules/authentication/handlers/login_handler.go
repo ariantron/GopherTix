@@ -18,22 +18,22 @@ type LoginHandler interface {
 
 type loginHandler struct {
 	loginService services.LoginService
-	validate     *validator.Validate
+	validator    *validator.Validate
 }
 
 func NewLoginHandler(loginService services.LoginService) LoginHandler {
 	return &loginHandler{
 		loginService: loginService,
-		validate:     validator.New(),
+		validator:    validator.New(),
 	}
 }
 
-func (ctrl *loginHandler) RegisterRoutes(router fiber.Router) {
+func (h *loginHandler) RegisterRoutes(router fiber.Router) {
 	auth := router.Group("/auth")
-	auth.Post("/login", ctrl.Login)
+	auth.Post("/login", h.Login)
 }
 
-func (ctrl *loginHandler) Login(c *fiber.Ctx) error {
+func (h *loginHandler) Login(c *fiber.Ctx) error {
 	var req requests.LoginRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -41,7 +41,7 @@ func (ctrl *loginHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := ctrl.validate.Struct(req); err != nil {
+	if err := h.validator.Struct(req); err != nil {
 		var validationErrors validator.ValidationErrors
 		errors.As(err, &validationErrors)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -49,7 +49,7 @@ func (ctrl *loginHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	user, token, err := ctrl.loginService.ValidateUserCredentials(c.Context(), req.Email, req.Password)
+	user, token, err := h.loginService.ValidateUserCredentials(c.Context(), req.Email, req.Password)
 	if errors.Is(err, services.ErrInvalidCredentials) {
 		if user == nil {
 			log.Printf("Invalid login attempt from IP: %s", c.IP())
@@ -64,7 +64,7 @@ func (ctrl *loginHandler) Login(c *fiber.Ctx) error {
 			Succeed: false,
 		}
 
-		if err := ctrl.loginService.CreateLoginRecord(c.Context(), loginRecord); err != nil {
+		if err := h.loginService.CreateLoginRecord(c.Context(), loginRecord); err != nil {
 			log.Printf("Failed to create login record: %v", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to create login record",
@@ -87,7 +87,7 @@ func (ctrl *loginHandler) Login(c *fiber.Ctx) error {
 		Succeed: true,
 	}
 
-	if err := ctrl.loginService.CreateLoginRecord(c.Context(), loginRecord); err != nil {
+	if err := h.loginService.CreateLoginRecord(c.Context(), loginRecord); err != nil {
 		log.Printf("Failed to create login record: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create login record",

@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"gopher_tix/modules/authentication/models"
+	"gopher_tix/modules/authorization/constants"
 	"gorm.io/gorm"
 )
 
@@ -12,8 +13,8 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	Update(ctx context.Context, user *models.User) error
 	Delete(ctx context.Context, user *models.User) error
-	List(ctx context.Context, offset, limit int, search string) ([]*models.User, error)
-	Count(ctx context.Context) (int64, error)
+	List(ctx context.Context, offset, limit int, search *string) ([]*models.User, error)
+	Count(ctx context.Context, search *string) (int64, error)
 	SoftDelete(ctx context.Context, user *models.User) error
 	Restore(ctx context.Context, user *models.User) error
 }
@@ -55,11 +56,11 @@ func (r *Repository) Delete(ctx context.Context, user *models.User) error {
 	return r.db.WithContext(ctx).Delete(user).Error
 }
 
-func (r *Repository) List(ctx context.Context, offset int, limit int, search string) ([]*models.User, error) {
+func (r *Repository) List(ctx context.Context, offset int, limit int, search *string) ([]*models.User, error) {
 	query := r.db.WithContext(ctx)
 
-	if search != "" {
-		query = query.Where("name ILIKE ?", "%"+search+"%")
+	if search != nil && *search != "" {
+		query = query.Where("name ILIKE ?", "%"+*search+"%")
 	}
 
 	var users []*models.User
@@ -69,12 +70,15 @@ func (r *Repository) List(ctx context.Context, offset int, limit int, search str
 	return users, nil
 }
 
-func (r *Repository) Count(ctx context.Context) (int64, error) {
+func (r *Repository) Count(ctx context.Context, search *string) (int64, error) {
 	var count int64
-	if err := r.db.WithContext(ctx).Model(&models.User{}).Count(&count).Error; err != nil {
-		return 0, err
+	query := r.db.WithContext(ctx).Model(&models.User{})
+	if search != nil && *search != "" {
+		query = query.Where("users.name ILIKE ?",
+			constants.OwnerRoleID, "%"+*search+"%")
 	}
-	return count, nil
+	err := query.Count(&count).Error
+	return count, err
 }
 
 func (r *Repository) SoftDelete(ctx context.Context, user *models.User) error {

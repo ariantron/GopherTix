@@ -17,27 +17,29 @@ import (
 
 type UserHandler struct {
 	userService services.UserService
+	validator   *validator.Validate
 }
 
 func NewUserHandler(userService services.UserService) *UserHandler {
 	return &UserHandler{
 		userService: userService,
+		validator:   validator.New(),
 	}
 }
 
-func (ctrl *UserHandler) RegisterRoutes(router fiber.Router) {
+func (h *UserHandler) RegisterRoutes(router fiber.Router) {
 	users := router.Group("/users")
 	users.Use(middlewares.JwtProtected())
-	users.Post("/", ctrl.CreateUser)
-	users.Get("/:id", ctrl.GetUser)
-	users.Get("/", ctrl.ListUsers)
-	users.Put("/:id", ctrl.UpdateUser)
-	users.Delete("/:id", ctrl.DeleteUser)
-	users.Delete("/:id/soft", ctrl.SoftDeleteUser)
-	users.Post("/:id/restore", ctrl.RestoreUser)
+	users.Post("/", h.CreateUser)
+	users.Get("/:id", h.GetUser)
+	users.Get("/", h.ListUsers)
+	users.Put("/:id", h.UpdateUser)
+	users.Delete("/:id", h.DeleteUser)
+	users.Delete("/:id/soft", h.SoftDeleteUser)
+	users.Post("/:id/restore", h.RestoreUser)
 }
 
-func (ctrl *UserHandler) CreateUser(ctx *fiber.Ctx) error {
+func (h *UserHandler) CreateUser(ctx *fiber.Ctx) error {
 	req := new(requests.UserCreateRequest)
 	if err := ctx.BodyParser(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -45,8 +47,7 @@ func (ctrl *UserHandler) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	validate := validator.New()
-	if err := validate.Struct(req); err != nil {
+	if err := h.validator.Struct(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Validation failed",
 			"details": err.Error(),
@@ -62,7 +63,7 @@ func (ctrl *UserHandler) CreateUser(ctx *fiber.Ctx) error {
 		Password: hashedPassword,
 	}
 
-	if err := ctrl.userService.CreateUser(ctx.Context(), user); err != nil {
+	if err := h.userService.CreateUser(ctx.Context(), user); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -75,7 +76,7 @@ func parseUUID(id string) (uuid.UUID, error) {
 	return uuid.Parse(id)
 }
 
-func (ctrl *UserHandler) GetUser(ctx *fiber.Ctx) error {
+func (h *UserHandler) GetUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -91,7 +92,7 @@ func (ctrl *UserHandler) GetUser(ctx *fiber.Ctx) error {
 		},
 	}
 
-	result, err := ctrl.userService.GetUserByID(ctx.Context(), user)
+	result, err := h.userService.GetUserByID(ctx.Context(), user)
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "User not found",
@@ -101,18 +102,18 @@ func (ctrl *UserHandler) GetUser(ctx *fiber.Ctx) error {
 	return ctx.JSON(result)
 }
 
-func (ctrl *UserHandler) ListUsers(ctx *fiber.Ctx) error {
+func (h *UserHandler) ListUsers(ctx *fiber.Ctx) error {
 	limit, _ := strconv.Atoi(ctx.Query("limit", "10"))
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
-	search := ctx.Query(`search`, "")
-	count, err := ctrl.userService.CountUsers(ctx.Context())
+	search := ctx.Query(`search`)
+	count, err := h.userService.CountUsers(ctx.Context(), &search)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 	totalPages, offset := utils.Paginate(count, page, limit)
-	users, err := ctrl.userService.ListUsers(ctx.Context(), offset, limit, search)
+	users, err := h.userService.ListUsers(ctx.Context(), offset, limit, &search)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -127,7 +128,7 @@ func (ctrl *UserHandler) ListUsers(ctx *fiber.Ctx) error {
 	})
 }
 
-func (ctrl *UserHandler) UpdateUser(ctx *fiber.Ctx) error {
+func (h *UserHandler) UpdateUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -142,8 +143,7 @@ func (ctrl *UserHandler) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	validate := validator.New()
-	if err := validate.Struct(req); err != nil {
+	if err := h.validator.Struct(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Validation failed",
 			"details": err.Error(),
@@ -163,7 +163,7 @@ func (ctrl *UserHandler) UpdateUser(ctx *fiber.Ctx) error {
 		user.Password, err = utils.HashPassword(req.Password)
 	}
 
-	if err := ctrl.userService.UpdateUser(ctx.Context(), user); err != nil {
+	if err := h.userService.UpdateUser(ctx.Context(), user); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -172,7 +172,7 @@ func (ctrl *UserHandler) UpdateUser(ctx *fiber.Ctx) error {
 	return ctx.JSON(user)
 }
 
-func (ctrl *UserHandler) DeleteUser(ctx *fiber.Ctx) error {
+func (h *UserHandler) DeleteUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -188,7 +188,7 @@ func (ctrl *UserHandler) DeleteUser(ctx *fiber.Ctx) error {
 		},
 	}
 
-	if err := ctrl.userService.DeleteUser(ctx.Context(), user); err != nil {
+	if err := h.userService.DeleteUser(ctx.Context(), user); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -199,7 +199,7 @@ func (ctrl *UserHandler) DeleteUser(ctx *fiber.Ctx) error {
 	})
 }
 
-func (ctrl *UserHandler) SoftDeleteUser(ctx *fiber.Ctx) error {
+func (h *UserHandler) SoftDeleteUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -215,7 +215,7 @@ func (ctrl *UserHandler) SoftDeleteUser(ctx *fiber.Ctx) error {
 		},
 	}
 
-	if err := ctrl.userService.SoftDeleteUser(ctx.Context(), user); err != nil {
+	if err := h.userService.SoftDeleteUser(ctx.Context(), user); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -226,7 +226,7 @@ func (ctrl *UserHandler) SoftDeleteUser(ctx *fiber.Ctx) error {
 	})
 }
 
-func (ctrl *UserHandler) RestoreUser(ctx *fiber.Ctx) error {
+func (h *UserHandler) RestoreUser(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -242,7 +242,7 @@ func (ctrl *UserHandler) RestoreUser(ctx *fiber.Ctx) error {
 		},
 	}
 
-	if err := ctrl.userService.RestoreUser(ctx.Context(), user); err != nil {
+	if err := h.userService.RestoreUser(ctx.Context(), user); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})

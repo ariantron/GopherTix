@@ -8,6 +8,14 @@ import (
 	"gorm.io/gorm"
 )
 
+type AuthorizeRepositoryInterface interface {
+	IsAdmin(ctx context.Context, userID uuid.UUID) (bool, error)
+	HasRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) (bool, error)
+	GetUserRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID) (*models.UserRole, error)
+	AssignRole(ctx context.Context, userRole *models.UserRole) error
+	UnassignRole(ctx context.Context, userRole *models.UserRole) error
+}
+
 type AuthorizeRepository struct {
 	db *gorm.DB
 }
@@ -26,7 +34,7 @@ func (r *AuthorizeRepository) IsAdmin(ctx context.Context, userID uuid.UUID) (bo
 	return exists, err
 }
 
-func (r *AuthorizeRepository) HasRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID int8) (bool, error) {
+func (r *AuthorizeRepository) HasRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) (bool, error) {
 	var exists bool
 	err := r.db.WithContext(ctx).Model(&models.UserRole{}).
 		Select("1").
