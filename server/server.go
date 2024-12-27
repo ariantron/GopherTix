@@ -10,6 +10,7 @@ import (
 	"gopher_tix/configs"
 	autnrouter "gopher_tix/modules/authentication/router"
 	autzrouter "gopher_tix/modules/authorization/router"
+	tcktrouter "gopher_tix/modules/ticketing/router"
 	"gorm.io/gorm"
 	"log"
 	"os"
@@ -48,23 +49,32 @@ func Serve(db *gorm.DB) {
 	}
 }
 
+func registerRoutes(db *gorm.DB, router fiber.Router) {
+	autnrouter.RegisterRoutes(db, router)
+	autzrouter.RegisterRoutes(db, router)
+	tcktrouter.RegisterRoutes(db, router)
+}
+
 func registerMiddlewares(app *fiber.App) {
 	app.Use(logger.New())
 	app.Use(recover.New())
+	registerSwaggerMiddleware(app)
+	registerCorsMiddleware(app)
+}
+
+func registerCorsMiddleware(app *fiber.App) {
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: configs.CorsAllowOrigins,
+		AllowHeaders: configs.CorsAllowHeaders,
+		AllowMethods: configs.CorsAllowMethods,
+	}))
+}
+
+func registerSwaggerMiddleware(app *fiber.App) {
 	app.Use(swagger.New(swagger.Config{
 		BasePath: "/",
 		FilePath: "./docs/swagger.json",
 		Path:     "swagger",
 		Title:    "Swagger API Docs",
 	}))
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-		AllowMethods: "GET, POST, PUT, DELETE",
-	}))
-}
-
-func registerRoutes(db *gorm.DB, router fiber.Router) {
-	autnrouter.RegisterRoutes(db, router)
-	autzrouter.RegisterRoutes(db, router)
 }
