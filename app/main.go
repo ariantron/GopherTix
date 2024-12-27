@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gopher_tix/packages/database"
+	"gopher_tix/database"
 	"gopher_tix/server"
 )
 

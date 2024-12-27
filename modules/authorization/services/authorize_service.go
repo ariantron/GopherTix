@@ -2,33 +2,33 @@ package services
 
 import (
 	"context"
-	"errors"
 	"github.com/google/uuid"
 	"gopher_tix/modules/authorization/constants"
-	"gopher_tix/modules/authorization/models"
 	"gopher_tix/modules/authorization/repositories"
 )
 
-type AuthorizeServiceInterface interface {
+type AuthorizeService interface {
 	IsAdmin(ctx context.Context, userID uuid.UUID) (bool, error)
 	HasRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) (bool, error)
-	AssignRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) error
-	UnassignRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) error
+	CanCreateSubgroup(ctx context.Context, userID uuid.UUID, parentGroupID uuid.UUID) (bool, error)
+	CanCreateRootGroup(ctx context.Context, userID uuid.UUID) (bool, error)
+	CanManageGroup(ctx context.Context, userID uuid.UUID, groupID uuid.UUID) (bool, error)
+	CanViewGroupMembers(ctx context.Context, userID uuid.UUID, groupID uuid.UUID) (bool, error)
 }
 
-type AuthorizeService struct {
-	repo *repositories.AuthorizeRepository
+type authorizeService struct {
+	repo repositories.AuthorizeRepository
 }
 
-func NewAuthorizeService(repo *repositories.AuthorizeRepository) *AuthorizeService {
-	return &AuthorizeService{repo: repo}
+func NewAuthorizeService(repo repositories.AuthorizeRepository) AuthorizeService {
+	return &authorizeService{repo: repo}
 }
 
-func (s *AuthorizeService) IsAdmin(ctx context.Context, userID uuid.UUID) (bool, error) {
+func (s *authorizeService) IsAdmin(ctx context.Context, userID uuid.UUID) (bool, error) {
 	return s.repo.IsAdmin(ctx, userID)
 }
 
-func (s *AuthorizeService) HasRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) (bool, error) {
+func (s *authorizeService) HasRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) (bool, error) {
 	isAdmin, err := s.IsAdmin(ctx, userID)
 	if err != nil {
 		return false, err
@@ -39,41 +39,39 @@ func (s *AuthorizeService) HasRole(ctx context.Context, userID uuid.UUID, groupI
 	return s.repo.HasRole(ctx, userID, groupID, roleID)
 }
 
-func (s *AuthorizeService) AssignRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) error {
-	if roleID == constants.AdminRoleID && groupID != uuid.Nil {
-		return errors.New("admin role can only be assigned at system level")
+func (s *authorizeService) CanCreateSubgroup(ctx context.Context, userID uuid.UUID, parentGroupID uuid.UUID) (bool, error) {
+	isAdmin, err := s.IsAdmin(ctx, userID)
+	if err != nil {
+		return false, err
 	}
-	if roleID == constants.OwnerRoleID {
-		hasOwner, err := s.repo.HasRole(ctx, uuid.Nil, groupID, constants.OwnerRoleID)
-		if err != nil {
-			return err
-		}
-		if hasOwner {
-			return errors.New("group already has an owner")
-		}
+	if isAdmin {
+		return true, nil
 	}
-	userRole := &models.UserRole{
-		UserID:  userID,
-		GroupID: groupID,
-		RoleID:  roleID,
-	}
-	return s.repo.AssignRole(ctx, userRole)
+	return s.HasRole(ctx, userID, parentGroupID, constants.OwnerRoleID)
 }
 
-func (s *AuthorizeService) UnassignRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) error {
-	if roleID == constants.OwnerRoleID {
-		hasOwner, err := s.repo.HasRole(ctx, uuid.Nil, groupID, constants.OwnerRoleID)
-		if err != nil {
-			return err
-		}
-		if !hasOwner {
-			return errors.New("cannot remove the only owner of a group")
-		}
+func (s *authorizeService) CanCreateRootGroup(ctx context.Context, userID uuid.UUID) (bool, error) {
+	return s.IsAdmin(ctx, userID)
+}
+
+func (s *authorizeService) CanManageGroup(ctx context.Context, userID uuid.UUID, groupID uuid.UUID) (bool, error) {
+	isAdmin, err := s.IsAdmin(ctx, userID)
+	if err != nil {
+		return false, err
 	}
-	userRole := &models.UserRole{
-		UserID:  userID,
-		GroupID: groupID,
-		RoleID:  roleID,
+	if isAdmin {
+		return true, nil
 	}
-	return s.repo.UnassignRole(ctx, userRole)
+	return s.HasRole(ctx, userID, groupID, constants.OwnerRoleID)
+}
+
+func (s *authorizeService) CanViewGroupMembers(ctx context.Context, userID uuid.UUID, groupID uuid.UUID) (bool, error) {
+	isAdmin, err := s.IsAdmin(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	if isAdmin {
+		return true, nil
+	}
+	return s.HasRole(ctx, userID, groupID, constants.MemberRoleID)
 }

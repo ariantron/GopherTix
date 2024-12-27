@@ -14,6 +14,11 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+const (
+	authHeader   = "Authorization"
+	bearerPrefix = "Bearer "
+)
+
 func GenerateToken(userID, email string) (string, error) {
 	claims := &Claims{
 		UserID: userID,
@@ -30,21 +35,20 @@ func GenerateToken(userID, email string) (string, error) {
 
 func JwtProtected() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		authHeader := c.Get("Authorization")
+		authHeader := c.Get(authHeader)
 		if authHeader == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Authorization header is required",
 			})
 		}
 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
+		if !strings.HasPrefix(authHeader, bearerPrefix) {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid authorization header format",
 			})
 		}
 
-		tokenString := parts[1]
+		tokenString := strings.TrimPrefix(authHeader, bearerPrefix)
 		claims := &Claims{}
 
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {

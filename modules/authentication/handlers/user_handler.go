@@ -5,41 +5,59 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"gopher_tix/modules/authentication/middlewares"
+	autnmiddlwares "gopher_tix/modules/authentication/middlewares"
 	"gopher_tix/modules/authentication/models"
 	"gopher_tix/modules/authentication/requests"
-	"gopher_tix/modules/authentication/services"
+	autnservices "gopher_tix/modules/authentication/services"
+	autzmiddlwares "gopher_tix/modules/authorization/middlewares"
+	autzservices "gopher_tix/modules/authorization/services"
 	"gopher_tix/packages/common/types"
 	"gopher_tix/packages/utils"
 	"log"
 	"strconv"
 )
 
-type UserHandler struct {
-	userService services.UserService
-	validator   *validator.Validate
+type UserHandler interface {
+	RegisterRoutes(router fiber.Router)
+	GetByID(ctx *fiber.Ctx) error
+	List(ctx *fiber.Ctx) error
+	Update(ctx *fiber.Ctx) error
+	Delete(ctx *fiber.Ctx) error
+	Deactivate(ctx *fiber.Ctx) error
+	Activate(ctx *fiber.Ctx) error
 }
 
-func NewUserHandler(userService services.UserService) *UserHandler {
-	return &UserHandler{
-		userService: userService,
-		validator:   validator.New(),
+type userHandler struct {
+	userService      autnservices.UserService
+	authorizeService autzservices.AuthorizeService
+	validator        *validator.Validate
+}
+
+func NewUserHandler(
+	userService autnservices.UserService,
+	authorizeService autzservices.AuthorizeService,
+) UserHandler {
+	return &userHandler{
+		userService:      userService,
+		authorizeService: authorizeService,
+		validator:        validator.New(),
 	}
 }
 
-func (h *UserHandler) RegisterRoutes(router fiber.Router) {
-	users := router.Group("/users")
-	users.Use(middlewares.JwtProtected())
-	users.Post("/", h.CreateUser)
-	users.Get("/:id", h.GetUser)
-	users.Get("/", h.ListUsers)
-	users.Put("/:id", h.UpdateUser)
-	users.Delete("/:id", h.DeleteUser)
-	users.Delete("/:id/soft", h.SoftDeleteUser)
-	users.Post("/:id/restore", h.RestoreUser)
+func (h *userHandler) RegisterRoutes(router fiber.Router) {
+	routes := router.Group("/users")
+	routes.Use(autnmiddlwares.JwtProtected()).
+		Use(autzmiddlwares.NewIsAdminMiddleware(h.authorizeService).Handle)
+	routes.Get("/:id", h.GetByID)
+	routes.Get("/", h.List)
+	routes.Post("/", h.Create)
+	routes.Put("/:id", h.Update)
+	routes.Delete("/:id", h.Delete)
+	routes.Delete("/:id/deactivate", h.Deactivate)
+	routes.Post("/:id/activate", h.Activate)
 }
 
-func (h *UserHandler) CreateUser(ctx *fiber.Ctx) error {
+func (h *userHandler) Create(ctx *fiber.Ctx) error {
 	req := new(requests.UserCreateRequest)
 	if err := ctx.BodyParser(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -76,7 +94,7 @@ func parseUUID(id string) (uuid.UUID, error) {
 	return uuid.Parse(id)
 }
 
-func (h *UserHandler) GetUser(ctx *fiber.Ctx) error {
+func (h *userHandler) GetByID(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -102,7 +120,7 @@ func (h *UserHandler) GetUser(ctx *fiber.Ctx) error {
 	return ctx.JSON(result)
 }
 
-func (h *UserHandler) ListUsers(ctx *fiber.Ctx) error {
+func (h *userHandler) List(ctx *fiber.Ctx) error {
 	limit, _ := strconv.Atoi(ctx.Query("limit", "10"))
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
 	search := ctx.Query(`search`)
@@ -128,7 +146,7 @@ func (h *UserHandler) ListUsers(ctx *fiber.Ctx) error {
 	})
 }
 
-func (h *UserHandler) UpdateUser(ctx *fiber.Ctx) error {
+func (h *userHandler) Update(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -172,7 +190,7 @@ func (h *UserHandler) UpdateUser(ctx *fiber.Ctx) error {
 	return ctx.JSON(user)
 }
 
-func (h *UserHandler) DeleteUser(ctx *fiber.Ctx) error {
+func (h *userHandler) Delete(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -199,7 +217,7 @@ func (h *UserHandler) DeleteUser(ctx *fiber.Ctx) error {
 	})
 }
 
-func (h *UserHandler) SoftDeleteUser(ctx *fiber.Ctx) error {
+func (h *userHandler) Deactivate(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -226,7 +244,7 @@ func (h *UserHandler) SoftDeleteUser(ctx *fiber.Ctx) error {
 	})
 }
 
-func (h *UserHandler) RestoreUser(ctx *fiber.Ctx) error {
+func (h *userHandler) Activate(ctx *fiber.Ctx) error {
 	id, err := parseUUID(ctx.Params("id"))
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{

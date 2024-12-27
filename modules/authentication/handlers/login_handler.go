@@ -12,8 +12,8 @@ import (
 )
 
 type LoginHandler interface {
-	Login(c *fiber.Ctx) error
 	RegisterRoutes(router fiber.Router)
+	Login(c *fiber.Ctx) error
 }
 
 type loginHandler struct {
@@ -29,8 +29,8 @@ func NewLoginHandler(loginService services.LoginService) LoginHandler {
 }
 
 func (h *loginHandler) RegisterRoutes(router fiber.Router) {
-	auth := router.Group("/auth")
-	auth.Post("/login", h.Login)
+	routes := router.Group("/auth")
+	routes.Post("/login", h.Login)
 }
 
 func (h *loginHandler) Login(c *fiber.Ctx) error {

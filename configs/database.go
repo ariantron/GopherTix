@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"gopher_tix/packages/initializer"
+	"gopher_tix/packages/utils"
 	"log"
 	"os"
 )
@@ -16,7 +16,7 @@ var (
 )
 
 func init() {
-	initializer.LoadEnv()
+	utils.LoadEnv()
 
 	DbHost = os.Getenv("DB_HOST")
 	DbPort = os.Getenv("DB_PORT")

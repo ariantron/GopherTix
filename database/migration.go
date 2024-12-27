@@ -4,7 +4,6 @@ import (
 	"fmt"
 	autnmodels "gopher_tix/modules/authentication/models"
 	autzmodels "gopher_tix/modules/authorization/models"
-	profmodels "gopher_tix/modules/profile/models"
 	tcktmodels "gopher_tix/modules/ticketing/models"
 	"gorm.io/gorm"
 	"log"
@@ -17,8 +16,6 @@ func Migrate(db *gorm.DB) {
 		&autzmodels.Group{},
 		&autzmodels.Role{},
 		&autzmodels.UserRole{},
-		&profmodels.UserField{},
-		&profmodels.Field{},
 		&tcktmodels.Ticket{},
 		&tcktmodels.Comment{},
 	)

@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"gopher_tix/packages/initializer"
+	"gopher_tix/packages/utils"
 	"log"
 	"os"
 )
@@ -9,7 +9,7 @@ import (
 var SecretKey []byte
 
 func init() {
-	initializer.LoadEnv()
+	utils.LoadEnv()
 
 	secretKey := os.Getenv("JWT_SECRET")
 	if secretKey == "" {

@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"gopher_tix/packages/initializer"
+	"gopher_tix/packages/utils"
 	"log"
 	"os"
 )
@@ -18,7 +18,7 @@ const (
 )
 
 func init() {
-	initializer.LoadEnv()
+	utils.LoadEnv()
 
 	AppName = os.Getenv("APP_NAME")
 	AppEnv = os.Getenv("APP_ENV")

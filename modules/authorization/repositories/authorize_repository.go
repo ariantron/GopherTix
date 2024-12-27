@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type AuthorizeRepositoryInterface interface {
+type AuthorizeRepository interface {
 	IsAdmin(ctx context.Context, userID uuid.UUID) (bool, error)
 	HasRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) (bool, error)
 	GetUserRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID) (*models.UserRole, error)
@@ -16,15 +16,15 @@ type AuthorizeRepositoryInterface interface {
 	UnassignRole(ctx context.Context, userRole *models.UserRole) error
 }
 
-type AuthorizeRepository struct {
+type authorizeRepository struct {
 	db *gorm.DB
 }
 
-func NewAuthorizeRepository(db *gorm.DB) *AuthorizeRepository {
-	return &AuthorizeRepository{db: db}
+func NewAuthorizeRepository(db *gorm.DB) AuthorizeRepository {
+	return &authorizeRepository{db: db}
 }
 
-func (r *AuthorizeRepository) IsAdmin(ctx context.Context, userID uuid.UUID) (bool, error) {
+func (r *authorizeRepository) IsAdmin(ctx context.Context, userID uuid.UUID) (bool, error) {
 	var exists bool
 	err := r.db.WithContext(ctx).Model(&models.UserRole{}).
 		Select("1").
@@ -34,7 +34,7 @@ func (r *AuthorizeRepository) IsAdmin(ctx context.Context, userID uuid.UUID) (bo
 	return exists, err
 }
 
-func (r *AuthorizeRepository) HasRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) (bool, error) {
+func (r *authorizeRepository) HasRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID, roleID uint8) (bool, error) {
 	var exists bool
 	err := r.db.WithContext(ctx).Model(&models.UserRole{}).
 		Select("1").
@@ -44,7 +44,7 @@ func (r *AuthorizeRepository) HasRole(ctx context.Context, userID uuid.UUID, gro
 	return exists, err
 }
 
-func (r *AuthorizeRepository) GetUserRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID) (*models.UserRole, error) {
+func (r *authorizeRepository) GetUserRole(ctx context.Context, userID uuid.UUID, groupID uuid.UUID) (*models.UserRole, error) {
 	var userRole models.UserRole
 	err := r.db.WithContext(ctx).Preload("Role").
 		Where("user_id = ? AND group_id = ?", userID, groupID).
@@ -55,10 +55,10 @@ func (r *AuthorizeRepository) GetUserRole(ctx context.Context, userID uuid.UUID,
 	return &userRole, nil
 }
 
-func (r *AuthorizeRepository) AssignRole(ctx context.Context, userRole *models.UserRole) error {
+func (r *authorizeRepository) AssignRole(ctx context.Context, userRole *models.UserRole) error {
 	return r.db.WithContext(ctx).Create(userRole).Error
 }
 
-func (r *AuthorizeRepository) UnassignRole(ctx context.Context, userRole *models.UserRole) error {
+func (r *authorizeRepository) UnassignRole(ctx context.Context, userRole *models.UserRole) error {
 	return r.db.WithContext(ctx).Delete(userRole).Error
 }
