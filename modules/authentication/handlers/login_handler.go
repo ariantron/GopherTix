@@ -1,30 +1,27 @@
 package handlers
 
 import (
-	"errors"
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"gopher_tix/modules/authentication/models"
 	"gopher_tix/modules/authentication/requests"
 	"gopher_tix/modules/authentication/services"
-	"log"
+	errs "gopher_tix/packages/common/errors"
 	"net"
 )
 
 type LoginHandler interface {
+	Login(ctx *fiber.Ctx) error
 	RegisterRoutes(router fiber.Router)
-	Login(c *fiber.Ctx) error
 }
 
 type loginHandler struct {
 	loginService services.LoginService
-	validator    *validator.Validate
 }
 
 func NewLoginHandler(loginService services.LoginService) LoginHandler {
 	return &loginHandler{
 		loginService: loginService,
-		validator:    validator.New(),
 	}
 }
 
@@ -33,72 +30,42 @@ func (h *loginHandler) RegisterRoutes(router fiber.Router) {
 	routes.Post("/login", h.Login)
 }
 
-func (h *loginHandler) Login(c *fiber.Ctx) error {
+func (h *loginHandler) Login(ctx *fiber.Ctx) error {
 	var req requests.LoginRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+	if err := errs.ParseAndValidateRequest(ctx, req); err != nil {
+		return err
 	}
 
-	if err := h.validator.Struct(req); err != nil {
-		var validationErrors validator.ValidationErrors
-		errors.As(err, &validationErrors)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": validationErrors.Error(),
-		})
-	}
+	ip := net.ParseIP(ctx.IP())
+	var userID uuid.UUID
+	var userEmail string
+	var token string
 
-	user, token, err := h.loginService.ValidateUserCredentials(c.Context(), req.Email, req.Password)
-	if errors.Is(err, services.ErrInvalidCredentials) {
-		if user == nil {
-			log.Printf("Invalid login attempt from IP: %s", c.IP())
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid credentials",
-			})
-		}
-
-		loginRecord := &models.Login{
-			UserID:  user.ID,
-			IP:      net.ParseIP(c.IP()),
-			Succeed: false,
-		}
-
-		if err := h.loginService.CreateLoginRecord(c.Context(), loginRecord); err != nil {
-			log.Printf("Failed to create login record: %v", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to create login record",
-			})
-		}
-
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid credentials",
-		})
-	} else if err != nil {
-		log.Printf("Internal server error: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Internal server error",
-		})
+	user, token, err := h.loginService.ValidateUserCredentials(ctx.Context(), req.Email, req.Password)
+	if user != nil {
+		userID = user.ID
+		userEmail = user.Email
 	}
 
 	loginRecord := &models.Login{
-		UserID:  user.ID,
-		IP:      net.ParseIP(c.IP()),
-		Succeed: true,
+		UserID:  userID,
+		IP:      ip,
+		Succeed: err == nil,
 	}
 
-	if err := h.loginService.CreateLoginRecord(c.Context(), loginRecord); err != nil {
-		log.Printf("Failed to create login record: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create login record",
-		})
+	if err := h.loginService.CreateLoginRecord(ctx.Context(), loginRecord); err != nil {
+		return err
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+	if err != nil {
+		return err
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"token": token,
 		"user": fiber.Map{
-			"id":    user.ID,
-			"email": user.Email,
+			"id":    userID,
+			"email": userEmail,
 		},
 	})
 }

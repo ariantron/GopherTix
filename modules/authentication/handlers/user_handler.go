@@ -2,45 +2,38 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 	autnmiddlwares "gopher_tix/modules/authentication/middlewares"
 	"gopher_tix/modules/authentication/models"
 	"gopher_tix/modules/authentication/requests"
 	autnservices "gopher_tix/modules/authentication/services"
 	autzmiddlwares "gopher_tix/modules/authorization/middlewares"
 	autzservices "gopher_tix/modules/authorization/services"
-	"gopher_tix/packages/common/types"
+	errs "gopher_tix/packages/common/errors"
 	"gopher_tix/packages/utils"
-	"log"
 	"strconv"
 )
 
 type UserHandler interface {
-	RegisterRoutes(router fiber.Router)
 	GetByID(ctx *fiber.Ctx) error
 	List(ctx *fiber.Ctx) error
+	Create(ctx *fiber.Ctx) error
 	Update(ctx *fiber.Ctx) error
 	Delete(ctx *fiber.Ctx) error
 	Deactivate(ctx *fiber.Ctx) error
 	Activate(ctx *fiber.Ctx) error
+	RegisterRoutes(router fiber.Router)
 }
 
 type userHandler struct {
 	userService      autnservices.UserService
 	authorizeService autzservices.AuthorizeService
-	validator        *validator.Validate
 }
 
-func NewUserHandler(
-	userService autnservices.UserService,
-	authorizeService autzservices.AuthorizeService,
-) UserHandler {
+func NewUserHandler(userService autnservices.UserService, authorizeService autzservices.AuthorizeService) UserHandler {
 	return &userHandler{
 		userService:      userService,
 		authorizeService: authorizeService,
-		validator:        validator.New(),
 	}
 }
 
@@ -59,84 +52,57 @@ func (h *userHandler) RegisterRoutes(router fiber.Router) {
 
 func (h *userHandler) Create(ctx *fiber.Ctx) error {
 	req := new(requests.UserCreateRequest)
-	if err := ctx.BodyParser(req); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
-	}
-
-	if err := h.validator.Struct(req); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Validation failed",
-			"details": err.Error(),
-		})
+	if err := errs.ParseAndValidateRequest(ctx, req); err != nil {
+		return err
 	}
 
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
-		log.Printf("Failed to hash password")
+		return err
 	}
+
 	user := &models.User{
 		Email:    req.Email,
 		Password: hashedPassword,
 	}
 
-	if err := h.userService.CreateUser(ctx.Context(), user); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+	if err := h.userService.Create(ctx.Context(), user); err != nil {
+		return err
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(user)
-}
-
-func parseUUID(id string) (uuid.UUID, error) {
-	return uuid.Parse(id)
+	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"user": user})
 }
 
 func (h *userHandler) GetByID(ctx *fiber.Ctx) error {
-	id, err := parseUUID(ctx.Params("id"))
+	id, err := utils.GetUUIDParam(ctx, "id")
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid UUID format",
-		})
+		return err
 	}
 
-	user := &models.User{
-		SoftDeleteModel: types.SoftDeleteModel{
-			BaseModel: types.BaseModel{
-				ID: id,
-			},
-		},
-	}
-
-	result, err := h.userService.GetUserByID(ctx.Context(), user)
+	user, err := h.userService.GetByID(ctx.Context(), id)
 	if err != nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "User not found",
-		})
+		return err
 	}
 
-	return ctx.JSON(result)
+	return ctx.JSON(fiber.Map{"user": user})
 }
 
 func (h *userHandler) List(ctx *fiber.Ctx) error {
 	limit, _ := strconv.Atoi(ctx.Query("limit", "10"))
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
-	search := ctx.Query(`search`)
-	count, err := h.userService.CountUsers(ctx.Context(), &search)
+	search := ctx.Query("search")
+
+	count, err := h.userService.Count(ctx.Context(), &search)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return err
 	}
+
 	totalPages, offset := utils.Paginate(count, page, limit)
-	users, err := h.userService.ListUsers(ctx.Context(), offset, limit, &search)
+	users, err := h.userService.List(ctx.Context(), offset, limit, &search)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return err
 	}
+
 	return ctx.JSON(fiber.Map{
 		"users":      users,
 		"total":      count,
@@ -147,126 +113,84 @@ func (h *userHandler) List(ctx *fiber.Ctx) error {
 }
 
 func (h *userHandler) Update(ctx *fiber.Ctx) error {
-	id, err := parseUUID(ctx.Params("id"))
+	id, err := utils.GetUUIDParam(ctx, "id")
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid UUID format",
-		})
+		return err
 	}
 
 	req := new(requests.UserUpdateRequest)
-	if err := ctx.BodyParser(req); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+	if err := errs.ParseAndValidateRequest(ctx, req); err != nil {
+		return err
 	}
 
-	if err := h.validator.Struct(req); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Validation failed",
-			"details": err.Error(),
-		})
+	user, err := h.userService.GetByID(ctx.Context(), id)
+	if err != nil {
+		return err
 	}
 
-	user := &models.User{
-		SoftDeleteModel: types.SoftDeleteModel{
-			BaseModel: types.BaseModel{
-				ID: id,
-			},
-		},
-		Email: req.Email,
+	if req.Email != "" {
+		user.Email = req.Email
 	}
-
 	if req.Password != "" {
 		user.Password, err = utils.HashPassword(req.Password)
+		if err != nil {
+			return err
+		}
 	}
 
-	if err := h.userService.UpdateUser(ctx.Context(), user); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+	if err := h.userService.Update(ctx.Context(), user); err != nil {
+		return err
 	}
 
-	return ctx.JSON(user)
+	return ctx.JSON(fiber.Map{"user": user})
 }
 
 func (h *userHandler) Delete(ctx *fiber.Ctx) error {
-	id, err := parseUUID(ctx.Params("id"))
+	id, err := utils.GetUUIDParam(ctx, "id")
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid UUID format",
-		})
+		return err
 	}
 
-	user := &models.User{
-		SoftDeleteModel: types.SoftDeleteModel{
-			BaseModel: types.BaseModel{
-				ID: id,
-			},
-		},
+	user, err := h.userService.GetByID(ctx.Context(), id)
+	if err != nil {
+		return err
 	}
 
-	if err := h.userService.DeleteUser(ctx.Context(), user); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+	if err := h.userService.Delete(ctx.Context(), user); err != nil {
+		return err
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": fmt.Sprintf("User was deleted with id %s", user.ID),
-	})
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "The user has been successfully deleted"})
 }
 
 func (h *userHandler) Deactivate(ctx *fiber.Ctx) error {
-	id, err := parseUUID(ctx.Params("id"))
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid UUID format",
-		})
-	}
-
-	user := &models.User{
-		SoftDeleteModel: types.SoftDeleteModel{
-			BaseModel: types.BaseModel{
-				ID: id,
-			},
-		},
-	}
-
-	if err := h.userService.SoftDeleteUser(ctx.Context(), user); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": fmt.Sprintf("User was deactivated with id %s", user.ID),
-	})
+	return h.toggleUserStatus(ctx, false, "deactivated")
 }
 
 func (h *userHandler) Activate(ctx *fiber.Ctx) error {
-	id, err := parseUUID(ctx.Params("id"))
+	return h.toggleUserStatus(ctx, true, "activated")
+}
+
+func (h *userHandler) toggleUserStatus(ctx *fiber.Ctx, activate bool, action string) error {
+	id, err := utils.GetUUIDParam(ctx, "id")
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid UUID format",
-		})
+		return err
 	}
 
-	user := &models.User{
-		SoftDeleteModel: types.SoftDeleteModel{
-			BaseModel: types.BaseModel{
-				ID: id,
-			},
-		},
+	user, err := h.userService.GetByID(ctx.Context(), id)
+	if err != nil {
+		return err
 	}
 
-	if err := h.userService.RestoreUser(ctx.Context(), user); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+	if activate {
+		err = h.userService.Activate(ctx.Context(), user)
+	} else {
+		err = h.userService.Deactivate(ctx.Context(), user)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": fmt.Sprintf("User was activated with id %s", user.ID),
-	})
+	if err != nil {
+		return err
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": fmt.Sprintf("The user has been successfully %s", action)})
 }

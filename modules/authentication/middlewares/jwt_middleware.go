@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"gopher_tix/configs"
+	errs "gopher_tix/packages/common/errors"
 	"strings"
 	"time"
 )
@@ -29,21 +30,25 @@ func GenerateToken(userID, email string) (string, error) {
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(configs.SecretKey)
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).
+		SignedString(configs.SecretKey)
+	if err != nil {
+		return "", errs.NewInternalServerError("Failed to generate token")
+	}
+	return token, nil
 }
 
 func JwtProtected() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		authHeader := c.Get(authHeader)
+	return func(ctx *fiber.Ctx) error {
+		authHeader := ctx.Get(authHeader)
 		if authHeader == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Authorization header is required",
 			})
 		}
 
 		if !strings.HasPrefix(authHeader, bearerPrefix) {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid authorization header format",
 			})
 		}
@@ -56,14 +61,14 @@ func JwtProtected() fiber.Handler {
 		})
 
 		if err != nil || !token.Valid {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid or expired token",
 			})
 		}
 
-		c.Locals("user_id", claims.UserID)
-		c.Locals("email", claims.Email)
+		ctx.Locals("user_id", claims.UserID)
+		ctx.Locals("email", claims.Email)
 
-		return c.Next()
+		return ctx.Next()
 	}
 }

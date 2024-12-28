@@ -11,6 +11,7 @@ import (
 	autnrouter "gopher_tix/modules/authentication/router"
 	autzrouter "gopher_tix/modules/authorization/router"
 	tcktrouter "gopher_tix/modules/ticketing/router"
+	errorhandler "gopher_tix/packages/common/errors"
 	"gorm.io/gorm"
 	"log"
 	"os"
@@ -60,6 +61,7 @@ func registerMiddlewares(app *fiber.App) {
 	app.Use(recover.New())
 	registerSwaggerMiddleware(app)
 	registerCorsMiddleware(app)
+	app.Use(errorhandler.HandleError)
 }
 
 func registerCorsMiddleware(app *fiber.App) {

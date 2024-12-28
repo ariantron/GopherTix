@@ -1,38 +1,32 @@
 package handlers
 
 import (
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 	"gopher_tix/modules/authorization/models"
 	"gopher_tix/modules/authorization/requests"
 	"gopher_tix/modules/authorization/services"
-	"gopher_tix/packages/common/errors"
+	errs "gopher_tix/packages/common/errors"
 	"gopher_tix/packages/utils"
 	"strconv"
 )
 
 type GroupHandler interface {
+	List(ctx *fiber.Ctx) error
+	GetByID(ctx *fiber.Ctx) error
+	Create(ctx *fiber.Ctx) error
+	Update(ctx *fiber.Ctx) error
+	Delete(ctx *fiber.Ctx) error
+	GetMembers(ctx *fiber.Ctx) error
 	RegisterRoutes(router fiber.Router)
-	List(c *fiber.Ctx) error
-	GetByID(c *fiber.Ctx) error
-	Create(c *fiber.Ctx) error
-	Update(c *fiber.Ctx) error
-	Delete(c *fiber.Ctx) error
-	GetMembers(c *fiber.Ctx) error
 }
 
 type groupHandler struct {
-	service      services.GroupService
-	validator    *validator.Validate
-	errorHandler errors.ErrorHandler
+	service services.GroupService
 }
 
 func NewGroupHandler(service services.GroupService) GroupHandler {
 	return &groupHandler{
-		service:      service,
-		validator:    validator.New(),
-		errorHandler: errors.NewErrorHandler(),
+		service: service,
 	}
 }
 
@@ -46,20 +40,20 @@ func (h *groupHandler) RegisterRoutes(router fiber.Router) {
 	routes.Get("/:id/members", h.GetMembers)
 }
 
-func (h *groupHandler) List(c *fiber.Ctx) error {
-	limit, _ := strconv.Atoi(c.Query("limit", "10"))
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	search := c.Query("search")
-	count, err := h.service.Count(c.Context(), &search)
+func (h *groupHandler) List(ctx *fiber.Ctx) error {
+	limit, _ := strconv.Atoi(ctx.Query("limit", "10"))
+	page, _ := strconv.Atoi(ctx.Query("page", "1"))
+	search := ctx.Query("search")
+	count, err := h.service.Count(ctx.Context(), &search)
 	if err != nil {
-		return h.handleServiceError(c, err)
+		return err
 	}
 	totalPages, offset := utils.Paginate(count, page, limit)
-	groups, err := h.service.List(c.Context(), offset, limit, &search)
+	groups, err := h.service.List(ctx.Context(), offset, limit, &search)
 	if err != nil {
-		return h.handleServiceError(c, err)
+		return err
 	}
-	return c.JSON(fiber.Map{
+	return ctx.JSON(fiber.Map{
 		"groups":     groups,
 		"total":      count,
 		"page":       page,
@@ -68,117 +62,83 @@ func (h *groupHandler) List(c *fiber.Ctx) error {
 	})
 }
 
-func (h *groupHandler) GetByID(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
+func (h *groupHandler) GetByID(ctx *fiber.Ctx) error {
+	id, err := utils.GetUUIDParam(ctx, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
-	group, err := h.service.GetByID(c.Context(), id)
+
+	group, err := h.service.GetByID(ctx.Context(), id)
 	if err != nil {
-		return h.handleServiceError(c, err)
+		return err
 	}
-	return c.JSON(group)
+	return ctx.JSON(group)
 }
 
-func (h *groupHandler) Create(c *fiber.Ctx) error {
+func (h *groupHandler) Create(ctx *fiber.Ctx) error {
 	var req requests.GroupCreateRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+	if err := errs.ParseAndValidateRequest(ctx, req); err != nil {
+		return err
 	}
 
-	if err := h.validator.Struct(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Validation failed",
-			"details": err.Error(),
-		})
-	}
-
-	currentUserID := c.Locals("userID").(uuid.UUID)
 	group := &models.Group{
 		Name:          req.Name,
 		ParentGroupID: req.ParentGroupID,
 	}
 
-	if err := h.service.Create(c.Context(), group, req.OwnerUserID, currentUserID); err != nil {
-		return h.handleServiceError(c, err)
+	if err := h.service.Create(ctx.Context(), group, req.OwnerUserID, utils.CurrentUserID(ctx)); err != nil {
+		return err
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(group)
+	return ctx.Status(fiber.StatusCreated).JSON(group)
 }
 
-func (h *groupHandler) Update(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
+func (h *groupHandler) Update(ctx *fiber.Ctx) error {
+	id, err := utils.GetUUIDParam(ctx, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
-	var req requests.GroupUpdateRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+	req := new(requests.GroupUpdateRequest)
+	if err := errs.ParseAndValidateRequest(ctx, req); err != nil {
+		return err
 	}
 
-	if err := h.validator.Struct(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Validation failed",
-			"details": err.Error(),
-		})
-	}
-
-	currentUserID := c.Locals("userID").(uuid.UUID)
 	group := &models.Group{
 		Name: req.Name,
 	}
 	group.ID = id
 
-	if err := h.service.Update(c.Context(), group, req.OwnerUserID, currentUserID); err != nil {
-		return h.handleServiceError(c, err)
+	if err := h.service.Update(ctx.Context(), group, req.OwnerUserID, utils.CurrentUserID(ctx)); err != nil {
+		return err
 	}
 
-	return c.JSON(group)
+	return ctx.JSON(group)
 }
 
-func (h *groupHandler) Delete(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
+func (h *groupHandler) Delete(ctx *fiber.Ctx) error {
+	id, err := utils.GetUUIDParam(ctx, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
-	currentUserID := c.Locals("userID").(uuid.UUID)
-	if err := h.service.Delete(c.Context(), id, currentUserID); err != nil {
-		return h.handleServiceError(c, err)
+	if err := h.service.Delete(ctx.Context(), id, utils.CurrentUserID(ctx)); err != nil {
+		return err
 	}
 
-	return c.SendStatus(fiber.StatusNoContent)
+	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
-func (h *groupHandler) GetMembers(c *fiber.Ctx) error {
-	groupID, err := uuid.Parse(c.Params("id"))
+func (h *groupHandler) GetMembers(ctx *fiber.Ctx) error {
+	id, err := utils.GetUUIDParam(ctx, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid group ID format",
-		})
+		return err
 	}
 
-	currentUserID := c.Locals("userID").(uuid.UUID)
-	members, err := h.service.GetMembers(c.Context(), groupID, currentUserID)
+	members, err := h.service.GetMembers(ctx.Context(), id, utils.CurrentUserID(ctx))
 	if err != nil {
-		return h.handleServiceError(c, err)
+		return err
 	}
 
-	return c.JSON(members)
-}
-
-func (h *groupHandler) handleServiceError(c *fiber.Ctx, err error) error {
-	errorResponse := h.errorHandler.HandleError(err)
-	return c.Status(errorResponse.Status).JSON(errorResponse)
+	return ctx.JSON(members)
 }

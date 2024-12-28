@@ -2,16 +2,11 @@ package services
 
 import (
 	"context"
-	"errors"
 	"golang.org/x/crypto/bcrypt"
 	"gopher_tix/modules/authentication/middlewares"
 	"gopher_tix/modules/authentication/models"
 	"gopher_tix/modules/authentication/repositories"
-)
-
-var (
-	ErrInvalidCredentials  = errors.New("invalid credentials")
-	ErrFailedGenerateToken = errors.New("failed to generate token")
+	errs "gopher_tix/packages/common/errors"
 )
 
 type LoginService interface {
@@ -36,18 +31,18 @@ func (s *loginService) CreateLoginRecord(ctx context.Context, login *models.Logi
 }
 
 func (s *loginService) ValidateUserCredentials(ctx context.Context, email, password string) (*models.User, string, error) {
-	user, err := s.userService.GetUserByEmail(ctx, email)
+	user, err := s.userService.GetByEmail(ctx, email)
 	if err != nil {
-		return nil, "", ErrInvalidCredentials
+		return nil, "", err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return user, "", ErrInvalidCredentials
+		return user, "", errs.NewInvalidCredentialsError()
 	}
 
 	token, err := middlewares.GenerateToken(user.ID.String(), user.Email)
 	if err != nil {
-		return user, "", ErrFailedGenerateToken
+		return user, "", err
 	}
 
 	return user, token, nil

@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"gopher_tix/modules/authorization/services"
+	errs "gopher_tix/packages/common/errors"
 )
 
 type IsAdmin struct {
@@ -16,21 +17,21 @@ func NewIsAdminMiddleware(authorizeService services.AuthorizeService) *IsAdmin {
 	}
 }
 
-func (m *IsAdmin) Handle(c *fiber.Ctx) error {
-	currentUserID := c.Locals("user_id").(uuid.UUID)
-
-	isAdmin, err := m.authorizeService.IsAdmin(c.Context(), currentUserID)
+func (m *IsAdmin) Handle(ctx *fiber.Ctx) error {
+	userIDStr := ctx.Locals("user_id").(string)
+	currentUserID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return errs.NewValidationError(err)
+	}
+
+	isAdmin, err := m.authorizeService.IsAdmin(ctx.Context(), currentUserID)
+	if err != nil {
+		return errs.NewInternalServerError("Failed to checking that the user is an admin")
 	}
 
 	if !isAdmin {
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "unauthorized: admin access required",
-		})
+		return errs.NewPermissionDeniedError("")
 	}
 
-	return c.Next()
+	return ctx.Next()
 }

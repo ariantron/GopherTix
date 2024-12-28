@@ -2,13 +2,10 @@ package services
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"github.com/google/uuid"
-	autzerrors "gopher_tix/modules/authorization/errors"
 	"gopher_tix/modules/authorization/models"
 	"gopher_tix/modules/authorization/repositories"
-	"gorm.io/gorm"
+	errs "gopher_tix/packages/common/errors"
 )
 
 type GroupService interface {
@@ -36,136 +33,97 @@ func NewGroupService(groupRepo repositories.GroupRepository, authorizeService Au
 }
 
 func (s *groupService) List(ctx context.Context, offset, limit int, search *string) ([]models.Group, error) {
-	groups, err := s.groupRepo.List(ctx, offset, limit, search)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list groups: %w", err)
-	}
-	return groups, nil
+	return s.groupRepo.List(ctx, offset, limit, search)
 }
 
 func (s *groupService) GetByID(ctx context.Context, id uuid.UUID) (*models.Group, error) {
-	group, err := s.groupRepo.GetByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, autzerrors.NewGroupNotFoundError(id.String())
-		}
-		return nil, fmt.Errorf("failed to get group: %w", err)
-	}
-	return group, nil
+	return s.groupRepo.GetByID(ctx, id)
 }
 
 func (s *groupService) Create(ctx context.Context, group *models.Group, ownerUserID uuid.UUID, currentUserID uuid.UUID) error {
 	if group.ParentGroupID != nil {
 		canCreate, err := s.authorizeService.CanCreateSubgroup(ctx, currentUserID, *group.ParentGroupID)
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return autzerrors.NewGroupNotFoundError(group.ParentGroupID.String())
-			}
-			return fmt.Errorf("failed to check subgroup creation permission: %w", err)
+			return err
 		}
 		if !canCreate {
-			return autzerrors.NewPermissionError("create subgroup")
+			return errs.NewPermissionDeniedError("Create Subgroup")
 		}
 	} else {
 		canCreate, err := s.authorizeService.CanCreateRootGroup(ctx, currentUserID)
 		if err != nil {
-			return fmt.Errorf("failed to check root group creation permission: %w", err)
+			return err
 		}
 		if !canCreate {
-			return autzerrors.NewPermissionError("create root group")
+			return errs.NewPermissionDeniedError("Create Root Group")
 		}
 	}
 
-	if err := s.groupRepo.Create(ctx, group, ownerUserID); err != nil {
-		return fmt.Errorf("failed to create group: %w", err)
-	}
-	return nil
+	return s.groupRepo.Create(ctx, group, ownerUserID)
 }
 
 func (s *groupService) Update(ctx context.Context, group *models.Group, ownerUserID *uuid.UUID, currentUserID uuid.UUID) error {
 	canManage, err := s.authorizeService.CanManageGroup(ctx, currentUserID, group.ID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return autzerrors.NewGroupNotFoundError(group.ID.String())
-		}
-		return fmt.Errorf("failed to check group management permission: %w", err)
+		return err
 	}
 	if !canManage {
-		return autzerrors.NewPermissionError("update group")
+		return errs.NewPermissionDeniedError("Update Group")
 	}
 
-	if err := s.groupRepo.Update(ctx, group, ownerUserID); err != nil {
-		return fmt.Errorf("failed to update group: %w", err)
-	}
-	return nil
+	return s.groupRepo.Update(ctx, group, ownerUserID)
 }
 
 func (s *groupService) Delete(ctx context.Context, id uuid.UUID, currentUserID uuid.UUID) error {
 	group, err := s.groupRepo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return autzerrors.NewGroupNotFoundError(id.String())
-		}
-		return fmt.Errorf("failed to get group: %w", err)
+		return err
 	}
 
 	if len(group.SubGroups) > 0 {
-		return autzerrors.NewValidationError("cannot delete group with subgroups")
+		return errs.NewIncorrectParameter("Cannot delete group with subgroups")
 	}
 
 	canManage, err := s.authorizeService.CanManageGroup(ctx, currentUserID, id)
 	if err != nil {
-		return fmt.Errorf("failed to check group management permission: %w", err)
+		return err
 	}
 	if !canManage {
-		return autzerrors.NewPermissionError("delete group")
+		return errs.NewPermissionDeniedError("Delete Group")
 	}
 
-	if err := s.groupRepo.Delete(ctx, id); err != nil {
-		return fmt.Errorf("failed to delete group: %w", err)
-	}
-	return nil
+	return s.groupRepo.Delete(ctx, id)
 }
 
 func (s *groupService) GetMembers(ctx context.Context, groupID uuid.UUID, currentUserID uuid.UUID) ([]models.UserRole, error) {
 	canView, err := s.authorizeService.CanViewGroupMembers(ctx, currentUserID, groupID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, autzerrors.NewGroupNotFoundError(groupID.String())
-		}
-		return nil, fmt.Errorf("failed to check member view permission: %w", err)
+		return nil, err
 	}
 	if !canView {
-		return nil, autzerrors.NewPermissionError("view group members")
+		return nil, errs.NewPermissionDeniedError("View Group Members")
 	}
 
-	members, err := s.groupRepo.GetMembers(ctx, groupID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get group members: %w", err)
-	}
-	return members, nil
+	return s.groupRepo.GetMembers(ctx, groupID)
 }
 
 func (s *groupService) AddMember(ctx context.Context, groupID uuid.UUID, userID uuid.UUID, roleID uint8, currentUserID uuid.UUID) error {
 	canManage, err := s.authorizeService.CanManageGroup(ctx, currentUserID, groupID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return autzerrors.NewGroupNotFoundError(groupID.String())
-		}
-		return fmt.Errorf("failed to check group management permission: %w", err)
+		return err
 	}
 	if !canManage {
-		return autzerrors.NewPermissionError("add group member")
+		return errs.NewPermissionDeniedError("Add Group Member")
 	}
 
 	members, err := s.groupRepo.GetMembers(ctx, groupID)
 	if err != nil {
-		return fmt.Errorf("failed to get group members: %w", err)
+		return err
 	}
 
 	for _, member := range members {
 		if member.UserID == userID {
-			return autzerrors.NewValidationError("user is already a member of this group")
+			return errs.NewIncorrectParameter("User is already a member of this group")
 		}
 	}
 
@@ -175,35 +133,29 @@ func (s *groupService) AddMember(ctx context.Context, groupID uuid.UUID, userID 
 		RoleID:  roleID,
 	}
 
-	if err := s.groupRepo.AddMember(ctx, userRole); err != nil {
-		return fmt.Errorf("failed to add member to group: %w", err)
-	}
-	return nil
+	return s.groupRepo.AddMember(ctx, userRole)
 }
 
 func (s *groupService) RemoveMember(ctx context.Context, groupID uuid.UUID, userID uuid.UUID, currentUserID uuid.UUID) error {
 	canManage, err := s.authorizeService.CanManageGroup(ctx, currentUserID, groupID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return autzerrors.NewGroupNotFoundError(groupID.String())
-		}
-		return fmt.Errorf("failed to check group management permission: %w", err)
+		return err
 	}
 	if !canManage {
-		return autzerrors.NewPermissionError("remove group member")
+		return errs.NewPermissionDeniedError("Remove Group Member")
 	}
 
 	owner, err := s.groupRepo.GetOwner(ctx, groupID)
 	if err != nil {
-		return fmt.Errorf("failed to get group owner: %w", err)
+		return err
 	}
 	if owner.UserID == userID {
-		return autzerrors.NewValidationError("cannot remove the group owner")
+		return errs.NewIncorrectParameter("Cannot remove the group owner")
 	}
 
 	members, err := s.groupRepo.GetMembers(ctx, groupID)
 	if err != nil {
-		return fmt.Errorf("failed to get group members: %w", err)
+		return err
 	}
 
 	isMember := false
@@ -215,19 +167,12 @@ func (s *groupService) RemoveMember(ctx context.Context, groupID uuid.UUID, user
 	}
 
 	if !isMember {
-		return autzerrors.NewValidationError("user is not a member of this group")
+		return errs.NewIncorrectParameter("User is not a member of this group")
 	}
 
-	if err := s.groupRepo.RemoveMember(ctx, groupID, userID); err != nil {
-		return fmt.Errorf("failed to remove member from group: %w", err)
-	}
-	return nil
+	return s.groupRepo.RemoveMember(ctx, groupID, userID)
 }
 
 func (s *groupService) Count(ctx context.Context, search *string) (int64, error) {
-	count, err := s.groupRepo.Count(ctx, search)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count groups: %w", err)
-	}
-	return count, nil
+	return s.groupRepo.Count(ctx, search)
 }
