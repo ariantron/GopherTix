@@ -111,23 +111,23 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 <!-- MARKDOWN LINKS & IMAGES -->
 
-[contributors-shield]: https://img.shields.io/github/contributors/moslem-akhoundi/gophertix.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/ariantron/gophertix.svg?style=for-the-badge
 
 [contributors-url]: https://github.com/ariantron/GopherTix/graphs/contributors
 
-[forks-shield]: https://img.shields.io/github/forks/moslem-akhoundi/gophertix.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/ariantron/gophertix.svg?style=for-the-badge
 
 [forks-url]: https://github.com/ariantron/GopherTix/network/members
 
-[stars-shield]: https://img.shields.io/github/stars/moslem-akhoundi/gophertix.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/ariantron/gophertix.svg?style=for-the-badge
 
 [stars-url]: https://github.com/ariantron/GopherTix/stargazers
 
-[issues-shield]: https://img.shields.io/github/issues/moslem-akhoundi/gophertix.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/ariantron/gophertix.svg?style=for-the-badge
 
 [issues-url]: https://github.com/ariantron/GopherTix/issues
 
-[license-shield]: https://img.shields.io/github/license/moslem-akhoundi/gophertix.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/ariantron/gophertix.svg?style=for-the-badge
 
 [license-url]: https://github.com/ariantron/GopherTix/blob/master/LICENSE
 
