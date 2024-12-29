@@ -9,16 +9,11 @@
 <br />
 <div align="center">
 
-<h3 align="center">GopherTix</h3>
+<h1 align="center">GopherTix</h1>
 
   <p align="center">
-    A modular back-end project built with GoLang, Postgres, Gorm, and Fiber.
+    A modular system with clean architecture for managing user tickets across teams efficiently
     <br />
-    <a href="https://github.com/ariantron/GopherTix/wiki"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/ariantron/GopherTix">View Demo</a>
-    ·
     <a href="https://github.com/ariantron/GopherTix/issues">Report Bug</a>
     ·
     <a href="https://github.com/ariantron/GopherTix/issues">Request Feature</a>
