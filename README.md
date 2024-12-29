@@ -96,6 +96,14 @@ $ cp .env.example .env
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+<!-- DATABASE -->
+
+## Database
+
+![db-diagram.jpg](assets/db-diagram.jpg)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 <!-- LICENSE -->
 
 ## License
