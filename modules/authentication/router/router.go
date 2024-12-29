@@ -14,10 +14,11 @@ func RegisterRoutes(db *gorm.DB, router fiber.Router) {
 	userRepo := autnrepositories.NewUserRepository(db)
 	loginRepo := autnrepositories.NewLoginRepository(db)
 	authorizeRepo := autzrepositories.NewAuthorizeRepository(db)
+	groupRepo := autzrepositories.NewGroupRepository(db)
 
 	userService := autnservices.NewUserService(userRepo)
 	loginService := autnservices.NewLoginService(loginRepo, userService)
-	authorizeService := autzservices.NewAuthorizeService(authorizeRepo)
+	authorizeService := autzservices.NewAuthorizeService(authorizeRepo, groupRepo)
 
 	userHandler := handlers.NewUserHandler(userService, authorizeService)
 	loginHandler := handlers.NewLoginHandler(loginService)

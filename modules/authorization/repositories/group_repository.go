@@ -59,7 +59,7 @@ func (r *groupRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Gr
 		First(&group, id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errs.NewNotFoundError("Group ID " + id.String())
+			return nil, errs.NewNotFoundError("Group")
 		}
 		return nil, errs.NewInternalServerError("Failed to get group")
 	}
@@ -118,7 +118,7 @@ func (r *groupRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	err := r.db.WithContext(ctx).Delete(&models.Group{}, id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errs.NewNotFoundError("Group ID " + id.String())
+			return errs.NewNotFoundError("Group")
 		}
 		return errs.NewInternalServerError("Failed to delete group")
 	}
@@ -130,9 +130,6 @@ func (r *groupRepository) GetOwner(ctx context.Context, groupID uuid.UUID) (*mod
 	err := r.db.WithContext(ctx).Where("group_id = ? AND role_id = ?", groupID, constants.OwnerRoleID).
 		First(&userRole).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errs.NewNotFoundError("Group owner not found")
-		}
 		return nil, errs.NewInternalServerError("Failed to get group owner")
 	}
 	return &userRole, nil

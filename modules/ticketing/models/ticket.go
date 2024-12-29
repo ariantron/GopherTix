@@ -15,7 +15,7 @@ type Ticket struct {
 	Group      autzmodels.Group `gorm:"foreignKey:GroupID" json:"group"`
 	CreatedBy  uuid.UUID        `gorm:"type:uuid" json:"created_by"`
 	Creator    autnmodels.User  `gorm:"foreignKey:CreatedBy" json:"creator"`
-	AssignedTo *uuid.UUID       `gorm:"type:uuid" json:"assigned_to"`
-	Assignee   *autnmodels.User `gorm:"foreignKey:AssignedTo" json:"assignee"`
+	AssignedTo uuid.UUID        `gorm:"type:uuid" json:"assigned_to"`
+	Assignee   autnmodels.User  `gorm:"foreignKey:AssignedTo" json:"assignee"`
 	Comments   []Comment        `gorm:"foreignKey:TicketID" json:"comments"`
 }

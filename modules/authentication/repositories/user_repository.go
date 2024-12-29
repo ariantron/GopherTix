@@ -21,19 +21,19 @@ type UserRepository interface {
 	Restore(ctx context.Context, user *models.User) error
 }
 
-type Repository struct {
+type userRepository struct {
 	db *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) *Repository {
-	return &Repository{db: db}
+func NewUserRepository(db *gorm.DB) UserRepository {
+	return &userRepository{db: db}
 }
 
-func (r *Repository) Create(ctx context.Context, user *models.User) error {
+func (r *userRepository) Create(ctx context.Context, user *models.User) error {
 	return r.db.WithContext(ctx).Create(user).Error
 }
 
-func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	var user models.User
 	if err := r.db.WithContext(ctx).Unscoped().First(&user, id).Error; err != nil {
 		return nil, handleError(err, "User ID "+id.String())
@@ -41,7 +41,7 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, e
 	return &user, nil
 }
 
-func (r *Repository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
 	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, handleError(err, "User")
@@ -49,21 +49,21 @@ func (r *Repository) GetByEmail(ctx context.Context, email string) (*models.User
 	return &user, nil
 }
 
-func (r *Repository) Update(ctx context.Context, user *models.User) error {
+func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 	if err := r.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", user.ID).Updates(user).Error; err != nil {
 		return handleError(err, "Failed to update user")
 	}
 	return nil
 }
 
-func (r *Repository) Delete(ctx context.Context, user *models.User) error {
+func (r *userRepository) Delete(ctx context.Context, user *models.User) error {
 	if err := r.db.WithContext(ctx).Delete(user).Error; err != nil {
 		return handleError(err, "Failed to delete user")
 	}
 	return nil
 }
 
-func (r *Repository) List(ctx context.Context, offset, limit int, search *string) ([]*models.User, error) {
+func (r *userRepository) List(ctx context.Context, offset, limit int, search *string) ([]*models.User, error) {
 	query := r.db.WithContext(ctx)
 	if search != nil && *search != "" {
 		query = query.Where("name ILIKE ?", "%"+*search+"%")
@@ -76,7 +76,7 @@ func (r *Repository) List(ctx context.Context, offset, limit int, search *string
 	return users, nil
 }
 
-func (r *Repository) Count(ctx context.Context, search *string) (int64, error) {
+func (r *userRepository) Count(ctx context.Context, search *string) (int64, error) {
 	var count int64
 	query := r.db.WithContext(ctx).Model(&models.User{})
 	if search != nil && *search != "" {
@@ -88,23 +88,23 @@ func (r *Repository) Count(ctx context.Context, search *string) (int64, error) {
 	return count, nil
 }
 
-func (r *Repository) SoftDelete(ctx context.Context, user *models.User) error {
+func (r *userRepository) SoftDelete(ctx context.Context, user *models.User) error {
 	if err := r.db.WithContext(ctx).Delete(user).Error; err != nil {
 		return handleError(err, "Failed to deactivate user")
 	}
 	return nil
 }
 
-func (r *Repository) Restore(ctx context.Context, user *models.User) error {
+func (r *userRepository) Restore(ctx context.Context, user *models.User) error {
 	if err := r.db.WithContext(ctx).Unscoped().Model(user).Update("deleted_at", nil).Error; err != nil {
 		return handleError(err, "Failed to activate user")
 	}
 	return nil
 }
 
-func handleError(err error, notFoundMessage string) error {
+func handleError(err error, message string) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return errs.NewNotFoundError(notFoundMessage)
+		return errs.NewNotFoundError("User")
 	}
-	return errs.NewInternalServerError(notFoundMessage)
+	return errs.NewInternalServerError(message)
 }
