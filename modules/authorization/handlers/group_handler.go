@@ -77,7 +77,7 @@ func (h *groupHandler) GetByID(ctx *fiber.Ctx) error {
 
 func (h *groupHandler) Create(ctx *fiber.Ctx) error {
 	var req requests.GroupCreateRequest
-	if err := errs.ParseAndValidateRequest(ctx, req); err != nil {
+	if err := errs.ParseAndValidateRequest(ctx, &req); err != nil {
 		return err
 	}
 
@@ -100,7 +100,7 @@ func (h *groupHandler) Update(ctx *fiber.Ctx) error {
 	}
 
 	req := new(requests.GroupUpdateRequest)
-	if err := errs.ParseAndValidateRequest(ctx, req); err != nil {
+	if err := errs.ParseAndValidateRequest(ctx, &req); err != nil {
 		return err
 	}
 

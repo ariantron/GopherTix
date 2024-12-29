@@ -27,7 +27,7 @@ func NewValidationError(err error) *ValidationError {
 
 func (e *ValidationError) HandleError(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-		"xtz":     e.Error(),
+		"error":   e.Error(),
 		"details": e.Errors,
 	})
 }

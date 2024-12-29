@@ -52,7 +52,7 @@ func (h *userHandler) RegisterRoutes(router fiber.Router) {
 
 func (h *userHandler) Create(ctx *fiber.Ctx) error {
 	req := new(requests.UserCreateRequest)
-	if err := errs.ParseAndValidateRequest(ctx, req); err != nil {
+	if err := errs.ParseAndValidateRequest(ctx, &req); err != nil {
 		return err
 	}
 
@@ -119,7 +119,7 @@ func (h *userHandler) Update(ctx *fiber.Ctx) error {
 	}
 
 	req := new(requests.UserUpdateRequest)
-	if err := errs.ParseAndValidateRequest(ctx, req); err != nil {
+	if err := errs.ParseAndValidateRequest(ctx, &req); err != nil {
 		return err
 	}
 

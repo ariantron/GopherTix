@@ -32,7 +32,7 @@ func (h *loginHandler) RegisterRoutes(router fiber.Router) {
 
 func (h *loginHandler) Login(ctx *fiber.Ctx) error {
 	var req requests.LoginRequest
-	if err := errs.ParseAndValidateRequest(ctx, req); err != nil {
+	if err := errs.ParseAndValidateRequest(ctx, &req); err != nil {
 		return err
 	}
 
