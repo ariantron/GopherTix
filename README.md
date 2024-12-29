@@ -48,9 +48,9 @@
 GopherTix is a modular system with a clean architecture implemented by GoLang and Fiber framework for efficiently
 managing user tickets across teams. It includes the following core modules:
 
-1. **Authentication**: Manage user login and registration securely.
-2. **Authorization**: Define and enforce user roles and permissions.
-3. **Ticketing**: Handle ticket creation, updates, and tracking.
+1. **Authentication**: Securely manage user accounts and login processes.
+2. **Authorization**: Define and enforce user roles and access control policies.
+3. **Ticketing**: Manage ticket creation and facilitate commenting.
 
 Each module is built with scalability and performance in mind, leveraging GoLang for its simplicity and speed.
 
