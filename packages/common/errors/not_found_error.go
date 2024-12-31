@@ -5,19 +5,19 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type NotFoundError struct {
+type ErrNotFound struct {
 	Object string
 }
 
-func (e *NotFoundError) Error() string {
+func (e *ErrNotFound) Error() string {
 	return fmt.Sprintf("%s not found", e.Object)
 }
 
-func NewNotFoundError(object string) *NotFoundError {
-	return &NotFoundError{Object: object}
+func NewNotFoundError(object string) *ErrNotFound {
+	return &ErrNotFound{Object: object}
 }
 
-func (e *NotFoundError) HandleError(ctx *fiber.Ctx) error {
+func (e *ErrNotFound) HandleError(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 		"error": e.Error(),
 	})

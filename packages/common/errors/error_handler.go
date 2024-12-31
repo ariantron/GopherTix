@@ -13,13 +13,13 @@ type ErrorInterface interface {
 
 var (
 	handlers = []ErrorInterface{
-		&NotFoundError{},
-		&ValidationError{},
-		&PermissionDeniedError{},
-		&InternalServerError{},
-		&IncorrectParameterError{},
-		&InvalidCredentialsError{},
-		&RequestFormatError{},
+		&ErrNotFound{},
+		&ErrValidation{},
+		&ErrPermissionDenied{},
+		&ErrInternalServer{},
+		&ErrIncorrectParameter{},
+		&ErrInvalidCredentials{},
+		&ErrRequestFormat{},
 	}
 )
 

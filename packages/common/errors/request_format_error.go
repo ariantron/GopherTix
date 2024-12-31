@@ -4,18 +4,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type RequestFormatError struct {
+type ErrRequestFormat struct {
 }
 
-func (e *RequestFormatError) Error() string {
+func (e *ErrRequestFormat) Error() string {
 	return "The request body format is invalid"
 }
 
-func NewRequestFormatError() *RequestFormatError {
-	return &RequestFormatError{}
+func NewRequestFormatError() *ErrRequestFormat {
+	return &ErrRequestFormat{}
 }
 
-func (e *RequestFormatError) HandleError(ctx *fiber.Ctx) error {
+func (e *ErrRequestFormat) HandleError(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 		"error": e.Error(),
 	})

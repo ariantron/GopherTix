@@ -4,18 +4,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type InvalidCredentialsError struct {
+type ErrInvalidCredentials struct {
 }
 
-func (e *InvalidCredentialsError) Error() string {
+func (e *ErrInvalidCredentials) Error() string {
 	return "Invalid credentials"
 }
 
-func NewInvalidCredentialsError() *InvalidCredentialsError {
-	return &InvalidCredentialsError{}
+func NewInvalidCredentialsError() *ErrInvalidCredentials {
+	return &ErrInvalidCredentials{}
 }
 
-func (e *InvalidCredentialsError) HandleError(ctx *fiber.Ctx) error {
+func (e *ErrInvalidCredentials) HandleError(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 		"error": e.Error(),
 	})

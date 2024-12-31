@@ -7,25 +7,25 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type ValidationError struct {
+type ErrValidation struct {
 	Errors map[string]string
 }
 
-func (e *ValidationError) Error() string {
+func (e *ErrValidation) Error() string {
 	return "validation failed"
 }
 
-func NewValidationError(err error) *ValidationError {
+func NewValidationError(err error) *ErrValidation {
 	var validationErrors validator.ValidationErrors
 	errors.As(err, &validationErrors)
 	errorsMap := make(map[string]string)
 	for _, fieldErr := range validationErrors {
 		errorsMap[fieldErr.Field()] = fmt.Sprintf("%s failed on the '%s' tag", fieldErr.Field(), fieldErr.Tag())
 	}
-	return &ValidationError{Errors: errorsMap}
+	return &ErrValidation{Errors: errorsMap}
 }
 
-func (e *ValidationError) HandleError(ctx *fiber.Ctx) error {
+func (e *ErrValidation) HandleError(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 		"error":   e.Error(),
 		"details": e.Errors,
